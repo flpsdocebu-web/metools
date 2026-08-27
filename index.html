@@ -10,6 +10,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>DepEd Cebu Province EIE M&E System</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/features.css">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script defer src="/app.js"></script>
 </head>
@@ -151,6 +152,8 @@
                 <label>Affected Personnel<input name="affectedPersonnel" type="number" min="0"></label>
               </div>
               <label>Brief Situation Description<textarea name="situationDescription" rows="4"></textarea></label>
+              <div class="section-actions"><button class="btn primary" id="saveEmergency" type="button">Save Emergency</button><button class="btn secondary" id="addEmergency" type="button" disabled>Add Another Emergency</button></div>
+              <div id="emergencyRecords" class="record-container"><p class="muted">No emergency records saved yet.</p></div>
             </article>
 
             <article class="card">
@@ -162,6 +165,15 @@
                 <label><input type="radio" name="continuityLevel" value="Level 3 - Full Emergency Response"><span><b>Level 3</b><small>Full Emergency Response</small></span></label>
               </div>
               <label>Learning Delivery Modality / Arrangement<textarea name="learningArrangement" rows="3"></textarea></label>
+              <div class="grid four continuity-details">
+                <label>Date Activated<input name="continuityActivationDate" type="date"></label>
+                <label>Expected Duration<input name="continuityDuration" placeholder="e.g. 2 weeks"></label>
+                <label>Responsible Person<input name="continuityResponsible"></label>
+                <label>Activation Status<select name="continuityStatus"><option value="">Select...</option><option>Standby</option><option>Active</option><option>Completed</option></select></label>
+              </div>
+              <label>Activation Notes / Actions Taken<textarea name="continuityNotes" rows="3"></textarea></label>
+              <div class="section-actions"><button class="btn primary" id="saveContinuity" type="button">Save Continuity Level</button><button class="btn secondary" id="addContinuity" type="button" disabled>Add Another Activation</button></div>
+              <div id="continuityRecords" class="record-container"><p class="muted">No continuity-level records saved yet.</p></div>
             </article>
 
             <article class="card">

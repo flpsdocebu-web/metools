@@ -17,7 +17,7 @@ const indicators=[
 "School recovery and transition-to-normalcy measures are identified and implemented.",
 "Monitoring results are used to improve the LSCP and future emergency preparedness."
 ];
-let state={token:null,user:null};
+let state={token:null,user:null,emergencyRecords:[],continuityRecords:[]};
 const scoreValues={"Compliant":3,"Partially Compliant":2,"Not Compliant":1};
 function ratingFor(p){if(p==null)return"Not yet rated";if(p>=90)return"Outstanding";if(p>=80)return"Very Satisfactory";if(p>=70)return"Satisfactory";if(p>=60)return"Needs Improvement";return"Needs Immediate Technical Assistance"}
 function calculateScore(items){const a=(items||[]).filter(x=>Object.hasOwn(scoreValues,x.status));const earned=a.reduce((n,x)=>n+scoreValues[x.status],0),maximum=a.length*3,percentage=maximum?Math.round(earned/maximum*10000)/100:null;return{earnedPoints:earned,maximumPoints:maximum,applicableItems:a.length,percentage,rating:ratingFor(percentage)}}
@@ -109,11 +109,15 @@ function fillSchoolProfile(){
 function serializeForm(){
   const d=Object.fromEntries(new FormData(qs("#meForm")).entries());
   d.checklist=indicators.map((indicator,i)=>({indicator,status:d[`indicator_${i}_status`]||"",remarks:d[`indicator_${i}_remarks`]||""}));
+  d.emergencies=state.emergencyRecords||[];
+  d.continuityActivations=state.continuityRecords||[];
   d.score=calculateScore(d.checklist);
   return d;
 }
 function fillForm(data){
   if(!data)return;
+  state.emergencyRecords=Array.isArray(data.emergencies)?data.emergencies:[];
+  state.continuityRecords=Array.isArray(data.continuityActivations)?data.continuityActivations:[];
   for(const [k,v] of Object.entries(data)){
     if(k==="checklist"||v==null||typeof v==="object")continue;
     const el=qs("#meForm").elements.namedItem(k);if(!el)continue;
@@ -123,10 +127,38 @@ function fillForm(data){
     const s=qs("#meForm").elements.namedItem(`indicator_${i}_status`),r=qs("#meForm").elements.namedItem(`indicator_${i}_remarks`);
     if(s)s.value=x.status||"";if(r)r.value=x.remarks||"";
   });
+  renderEmergencyRecords();renderContinuityRecords();
   updateLiveScore();
 }
+function formValue(name){return qs("#meForm").elements.namedItem(name)?.value||""}
+function clearFields(names){names.forEach(name=>{const el=qs("#meForm").elements.namedItem(name);if(!el)return;if(el instanceof RadioNodeList)[...el].forEach(x=>x.checked=false);else el.value=""})}
+function renderEmergencyRecords(){
+  const box=qs("#emergencyRecords");if(!box)return;const rows=state.emergencyRecords||[];
+  box.innerHTML=rows.length?rows.map((r,i)=>`<div class="saved-record"><div><span class="record-number">Emergency ${i+1}</span><strong>${esc(r.hazardType)}</strong><small>${esc(r.emergencyDate||"Date not specified")} • ${esc(r.affectedLearners||0)} learner(s) • ${esc(r.affectedPersonnel||0)} personnel</small><p>${esc(r.situationDescription||"No situation description.")}</p></div><button class="btn red remove-emergency" data-index="${i}" type="button">Remove</button></div>`).join(""):`<p class="muted">No emergency records saved yet.</p>`;
+  qsa(".remove-emergency").forEach(b=>b.onclick=()=>{state.emergencyRecords.splice(Number(b.dataset.index),1);renderEmergencyRecords();toast("Emergency record removed.")});
+}
+function saveEmergencyRecord(){
+  const record={hazardType:formValue("hazardType"),emergencyDate:formValue("emergencyDate"),affectedLearners:formValue("affectedLearners"),affectedPersonnel:formValue("affectedPersonnel"),situationDescription:formValue("situationDescription"),savedAt:new Date().toISOString()};
+  if(!record.hazardType){toast("Please select the type of emergency or hazard.");return}
+  state.emergencyRecords.push(record);renderEmergencyRecords();qs("#addEmergency").disabled=false;toast("Emergency record saved.");
+}
+function renderContinuityRecords(){
+  const box=qs("#continuityRecords");if(!box)return;const rows=state.continuityRecords||[];
+  box.innerHTML=rows.length?rows.map((r,i)=>`<div class="saved-record"><div><span class="record-number">Activation ${i+1}</span><strong>${esc(r.level)}</strong><small>${esc(r.activationDate||"Date not specified")} • ${esc(r.status||"Status not specified")} • ${esc(r.duration||"Duration not specified")}</small><p>${esc(r.arrangement||"No learning delivery arrangement entered.")}</p></div><button class="btn red remove-continuity" data-index="${i}" type="button">Remove</button></div>`).join(""):`<p class="muted">No continuity-level records saved yet.</p>`;
+  qsa(".remove-continuity").forEach(b=>b.onclick=()=>{state.continuityRecords.splice(Number(b.dataset.index),1);renderContinuityRecords();toast("Continuity record removed.")});
+}
+function saveContinuityRecord(){
+  const record={level:formValue("continuityLevel"),arrangement:formValue("learningArrangement"),activationDate:formValue("continuityActivationDate"),duration:formValue("continuityDuration"),responsible:formValue("continuityResponsible"),status:formValue("continuityStatus"),notes:formValue("continuityNotes"),savedAt:new Date().toISOString()};
+  if(!record.level){toast("Please select an activated learning continuity level.");return}
+  state.continuityRecords.push(record);renderContinuityRecords();qs("#addContinuity").disabled=false;toast("Continuity-level record saved.");
+}
+qs("#saveEmergency").onclick=saveEmergencyRecord;
+qs("#addEmergency").onclick=()=>{clearFields(["hazardType","emergencyDate","affectedLearners","affectedPersonnel","situationDescription"]);qs("#addEmergency").disabled=true;toast("Ready for another emergency record.")};
+qs("#saveContinuity").onclick=saveContinuityRecord;
+qs("#addContinuity").onclick=()=>{clearFields(["continuityLevel","learningArrangement","continuityActivationDate","continuityDuration","continuityResponsible","continuityStatus","continuityNotes"]);qs("#addContinuity").disabled=true;toast("Ready for another continuity activation.")};
 async function loadDraft(){
   buildChecklist();fillSchoolProfile();
+  state.emergencyRecords=[];state.continuityRecords=[];renderEmergencyRecords();renderContinuityRecords();
   try{const d=await api("/draft");if(d.draft)fillForm(d.draft)}catch{}
   fillSchoolProfile();
 }
