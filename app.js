@@ -167,19 +167,61 @@ function renderMeActions(){
   if(state.user.role==="admin"){
     a.innerHTML=`<button class="btn primary" type="button" id="adminSave">Save</button><button class="btn secondary" type="button" id="adminPrint">Print Blank Tool</button>`;
     qs("#adminSave").onclick=async()=>{try{await api("/draft",{method:"POST",body:JSON.stringify({data:serializeForm()})});toast("M&E record saved successfully.")}catch(err){toast(err.message)}};
-    qs("#adminPrint").onclick=()=>window.print();return
+    qs("#adminPrint").onclick=()=>printMEReport();return
   }
   a.innerHTML=`<button class="btn secondary" type="button" id="saveDraft">Save</button><button class="btn green" type="button" id="submitME">Submit</button><button class="btn secondary" type="button" id="printME">Print</button><button class="btn red" type="button" id="pdfME">Save as PDF</button>`;
   qs("#saveDraft").onclick=async()=>{await api("/draft",{method:"POST",body:JSON.stringify({data:serializeForm()})});toast("Draft saved.")};
   qs("#submitME").onclick=async()=>{const d=serializeForm();if(!d.monitoringDate){toast("Please enter the Date of Monitoring.");return}await api("/submit",{method:"POST",body:JSON.stringify({data:d})});toast("M&E report submitted successfully.")};
-  qs("#printME").onclick=()=>window.print();
+  qs("#printME").onclick=()=>printMEReport();
   qs("#pdfME").onclick=()=>savePDF();
 }
 function savePDF(){
-  if(typeof html2pdf==="undefined"){window.print();return}
-  const el=qs("#mePage");const school=qs("#meSchoolName").value||"School";
-  html2pdf().set({margin:8,filename:`EIE_ME_${school.replace(/[^a-z0-9]+/gi,"_")}.pdf`,image:{type:"jpeg",quality:.97},html2canvas:{scale:1.4,useCORS:true},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},pagebreak:{mode:["avoid-all","css","legacy"]}}).from(el).save();
+  printMEReport();
 }
+
+function printDate(value){if(!value)return"";const d=new Date(`${value}T00:00:00`);return Number.isNaN(d.valueOf())?value:d.toLocaleDateString("en-PH",{year:"numeric",month:"long",day:"numeric"})}
+function printCell(label,value){return`<tr><th>${esc(label)}</th><td>${esc(value||"")}</td></tr>`}
+function buildPrintReport(){
+  const d=serializeForm(),score=d.score||calculateScore(d.checklist),short={"Compliant":"C","Partially Compliant":"PC","Not Compliant":"NC","Not Applicable":"NA"};
+  const counts={C:0,PC:0,NC:0,NA:0};(d.checklist||[]).forEach(x=>{if(short[x.status])counts[short[x.status]]++});
+  const emergencies=(d.emergencies?.length?d.emergencies:[{hazardType:d.hazardType,emergencyDate:d.emergencyDate,affectedLearners:d.affectedLearners,affectedPersonnel:d.affectedPersonnel,situationDescription:d.situationDescription}]).filter(x=>x.hazardType||x.emergencyDate||x.situationDescription);
+  const activations=(d.continuityActivations?.length?d.continuityActivations:[{level:d.continuityLevel,arrangement:d.learningArrangement,activationDate:d.continuityActivationDate,duration:d.continuityDuration,responsible:d.continuityResponsible,status:d.continuityStatus,notes:d.continuityNotes}]).filter(x=>x.level||x.arrangement);
+  const checkRows=(d.checklist||[]).map((x,i)=>`<tr><td class="center">${i+1}</td><td>${esc(x.indicator)}</td><td class="center mark">${x.status==="Compliant"?"✓":""}</td><td class="center mark">${x.status==="Partially Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Applicable"?"✓":""}</td><td>${esc(x.remarks||"")}</td><td></td><td></td></tr>`).join("");
+  qs("#printReport").innerHTML=`
+    <div class="print-sheet print-cover">
+      <header class="report-header"><img src="/assets/cebu-province-logo.png" alt=""><div><div>REPUBLIC OF THE PHILIPPINES</div><strong>DEPARTMENT OF EDUCATION</strong><small>SCHOOLS DIVISION OF CEBU PROVINCE</small></div></header>
+      <div class="cover-title"><h1>MONITORING AND<br>EVALUATION TOOL</h1><h2>Learning and Service Continuity Plan (LSCP)</h2><p>Anchored on DepEd Order No. 14, s. 2026<br>Guidelines on Learning Continuity in Emergencies</p></div>
+      <table class="form-table cover-details">${printCell("School",d.schoolName)}${printCell("Schools Division Office",d.division)}${printCell("Region",d.region)}${printCell("Monitoring Date",printDate(d.monitoringDate))}${printCell("Evaluator / Team",d.monitoredBy)}</table>
+      <p class="controlled">CONTROLLED WORKING COPY &nbsp;•&nbsp; OFFICIAL SYSTEM-GENERATED REPORT</p>
+    </div>
+    <div class="print-sheet">
+      <h2 class="section-title">1. School Profile</h2>
+      <table class="form-table">${printCell("Region / SDO / District",[d.region,d.division,d.district].filter(Boolean).join(" / "))}${printCell("School Name / School ID",[d.schoolName,d.schoolId].filter(Boolean).join(" / "))}${printCell("School Year",d.schoolYear)}${printCell("School Head / Designation",[d.schoolHead,d.designation].filter(Boolean).join(" / "))}${printCell("Monitoring Date",printDate(d.monitoringDate))}${printCell("Emergency / hazard and affected area",emergencies.map(x=>x.hazardType).join("; "))}${printCell("Learners / personnel affected",emergencies.map(x=>`${x.affectedLearners||0} learners / ${x.affectedPersonnel||0} personnel`).join("; "))}</table>
+      <h2 class="section-title">2. Activated Learning Continuity Level</h2>
+      <table class="report-grid"><thead><tr><th>Selected Level</th><th>Learning Delivery Arrangement</th><th>Date Activated</th><th>Status / Duration</th><th>Basis / Local Evidence</th></tr></thead><tbody>${activations.length?activations.map(x=>`<tr><td>${esc(x.level||"")}</td><td>${esc(x.arrangement||"")}</td><td>${esc(printDate(x.activationDate))}</td><td>${esc([x.status,x.duration].filter(Boolean).join(" / "))}</td><td>${esc(x.notes||"")}</td></tr>`).join(""):`<tr><td colspan="5" class="blank-row"></td></tr>`}</tbody></table>
+      <h3 class="sub-title">Emergency / Hazard Record</h3>
+      <table class="report-grid"><thead><tr><th>Emergency / Hazard</th><th>Date Occurred</th><th>Affected Learners</th><th>Affected Personnel</th><th>Situation Description</th></tr></thead><tbody>${emergencies.length?emergencies.map(x=>`<tr><td>${esc(x.hazardType||"")}</td><td>${esc(printDate(x.emergencyDate))}</td><td class="center">${esc(x.affectedLearners||"0")}</td><td class="center">${esc(x.affectedPersonnel||"0")}</td><td>${esc(x.situationDescription||"")}</td></tr>`).join(""):`<tr><td colspan="5" class="blank-row"></td></tr>`}</tbody></table>
+    </div>
+    <div class="print-sheet print-landscape">
+      <h2 class="section-title">3. Compliance and Implementation Checklist</h2>
+      <p class="guide"><b>Rating guide:</b> C = Compliant; PC = Partially Compliant; NC = Not Compliant; NA = Not Applicable. One rating is marked per indicator. NA is excluded from automatic scoring.</p>
+      <table class="report-grid checklist-print"><thead><tr><th>No.</th><th>Indicator</th><th>C</th><th>PC</th><th>NC</th><th>NA</th><th>Means of Verification / Remarks</th><th>Findings / Gaps</th><th>Action Needed</th></tr></thead><tbody>${checkRows}</tbody></table>
+    </div>
+    <div class="print-sheet">
+      <h2 class="section-title">4. Rating Summary</h2>
+      <table class="report-grid summary-table"><thead><tr><th>C</th><th>PC</th><th>NC</th><th>NA</th><th>Applicable Items</th><th>Earned Points</th><th>Maximum Points</th><th>Overall Score</th><th>Descriptive Rating</th></tr></thead><tbody><tr><td>${counts.C}</td><td>${counts.PC}</td><td>${counts.NC}</td><td>${counts.NA}</td><td>${score.applicableItems}</td><td>${score.earnedPoints}</td><td>${score.maximumPoints}</td><td><b>${score.percentage==null?"—":score.percentage.toFixed(2)+"%"}</b></td><td><b>${esc(score.rating)}</b></td></tr></tbody></table>
+      <p class="guide"><b>Automatic computation used by the online tool:</b> earned points ÷ maximum applicable points × 100. Compliant = 3; Partially Compliant = 2; Not Compliant = 1; Not Applicable is excluded.</p>
+      <h2 class="section-title">5. Summary of Technical Assistance</h2>
+      <table class="report-grid ta-table"><thead><tr><th>Issue / Gap</th><th>Technical Assistance Provided / Agreed</th><th>Responsible Person / Office</th><th>Timeline</th><th>Status</th><th>Follow-up / Evidence</th></tr></thead><tbody><tr><td>${esc(d.gaps||"")}</td><td>${esc(d.technicalAssistance||"")}</td><td>${esc(d.responsiblePerson||"")}</td><td>${esc(printDate(d.targetDate))}</td><td>${esc(d.overallStatus||"")}</td><td>${esc(d.nextSteps||"")}</td></tr></tbody></table>
+      <h2 class="section-title">6. Overall Findings and Recommendations</h2>
+      <div class="narrative"><h3>Key strengths / good practices</h3><p>${esc(d.strengths||"")}</p><h3>Priority gaps / risks requiring action</h3><p>${esc(d.gaps||"")}</p><h3>Recommendations and agreed next steps</h3><p>${esc(d.nextSteps||"")}</p><h3>Additional remarks</h3><p>${esc(d.additionalRemarks||"")}</p></div>
+      <h2 class="section-title">7. Signatures and Acknowledgment</h2>
+      <p class="acknowledgment">The findings and agreed technical assistance/actions were discussed with the concerned school personnel. Signatures acknowledge receipt and discussion.</p>
+      <div class="signature-grid"><div><span>${esc(d.schoolHead||"")}</span><b>School Head</b></div><div><span>${esc(d.validatedBy||"")}</span><b>Validated / Acknowledged by</b></div><div><span>${esc(d.monitoredBy||"")}</span><b>Evaluator / M&E Team Leader</b></div></div>
+    </div>`;
+}
+function printMEReport(){buildPrintReport();document.body.classList.add("printing-report");qs("#printReport").setAttribute("aria-hidden","false");setTimeout(()=>window.print(),60)}
+window.addEventListener("afterprint",()=>{document.body.classList.remove("printing-report");qs("#printReport")?.setAttribute("aria-hidden","true")});
 async function renderDashboard(){
   const d=await api("/dashboard");
   let reports=d.recent||[];try{reports=(await api("/submissions")).submissions||reports}catch{}
