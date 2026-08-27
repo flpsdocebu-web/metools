@@ -71,7 +71,31 @@ qs("#logoutBtn").addEventListener("click",()=>{sessionStorage.removeItem("eieTok
 function buildChecklist(){
   const tb=qs("#checklistTable tbody");tb.innerHTML="";
   indicators.forEach((x,i)=>tb.insertAdjacentHTML("beforeend",`<tr><td>${i+1}</td><td>${x}</td><td><select name="indicator_${i}_status"><option value="">Select...</option><option>Compliant</option><option>Partially Compliant</option><option>Not Compliant</option><option>Not Applicable</option></select></td><td><textarea rows="2" name="indicator_${i}_remarks"></textarea></td></tr>`));
-  qsa("#checklistTable select").forEach(x=>x.addEventListener("change",updateLiveScore));updateLiveScore();
+  qsa("#checklistTable select").forEach(x=>x.addEventListener("change",updateLiveScore));configureRequiredFields();updateLiveScore();
+}
+const emergencyFieldNames=["hazardType","emergencyDate","affectedLearners","affectedPersonnel","situationDescription"];
+const continuityFieldNames=["continuityLevel","learningArrangement","continuityActivationDate","continuityDuration","continuityResponsible","continuityStatus","continuityNotes"];
+function configureRequiredFields(){
+  const form=qs("#meForm");if(!form)return;
+  qsa("#meForm label").forEach(label=>label.classList.add("required-field"));
+  qsa("#meForm input,#meForm select,#meForm textarea").forEach(el=>{
+    if(el.type!=="button"&&!emergencyFieldNames.includes(el.name)&&!continuityFieldNames.includes(el.name))el.required=true;
+  });
+}
+function validateNamedFields(names,message){
+  const form=qs("#meForm");
+  for(const name of names){
+    const field=form.elements.namedItem(name);
+    const valid=field instanceof RadioNodeList?[...field].some(x=>x.checked):String(field?.value||"").trim()!=="";
+    if(!valid){toast(message);const target=field instanceof RadioNodeList?[...field][0]:field;target?.focus();target?.scrollIntoView({behavior:"smooth",block:"center"});return false}
+  }
+  return true;
+}
+function validateReportForSubmission(){
+  if(!(state.emergencyRecords||[]).length){toast("Save at least one complete Emergency / Hazard record before submitting.");qs("#saveEmergency")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
+  if(!(state.continuityRecords||[]).length){toast("Save at least one complete Learning Continuity activation before submitting.");qs("#saveContinuity")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
+  const form=qs("#meForm");if(!form.reportValidity()){toast("Please complete every required field marked with an asterisk.");return false}
+  return true;
 }
 buildChecklist();
 
@@ -138,8 +162,8 @@ function renderEmergencyRecords(){
   qsa(".remove-emergency").forEach(b=>b.onclick=()=>{state.emergencyRecords.splice(Number(b.dataset.index),1);renderEmergencyRecords();toast("Emergency record removed.")});
 }
 function saveEmergencyRecord(){
+  if(!validateNamedFields(emergencyFieldNames,"Please complete all required Emergency / Hazard fields."))return;
   const record={hazardType:formValue("hazardType"),emergencyDate:formValue("emergencyDate"),affectedLearners:formValue("affectedLearners"),affectedPersonnel:formValue("affectedPersonnel"),situationDescription:formValue("situationDescription"),savedAt:new Date().toISOString()};
-  if(!record.hazardType){toast("Please select the type of emergency or hazard.");return}
   state.emergencyRecords.push(record);renderEmergencyRecords();qs("#addEmergency").disabled=false;toast("Emergency record saved.");
 }
 function renderContinuityRecords(){
@@ -148,8 +172,8 @@ function renderContinuityRecords(){
   qsa(".remove-continuity").forEach(b=>b.onclick=()=>{state.continuityRecords.splice(Number(b.dataset.index),1);renderContinuityRecords();toast("Continuity record removed.")});
 }
 function saveContinuityRecord(){
+  if(!validateNamedFields(continuityFieldNames,"Please complete all required Learning Continuity fields."))return;
   const record={level:formValue("continuityLevel"),arrangement:formValue("learningArrangement"),activationDate:formValue("continuityActivationDate"),duration:formValue("continuityDuration"),responsible:formValue("continuityResponsible"),status:formValue("continuityStatus"),notes:formValue("continuityNotes"),savedAt:new Date().toISOString()};
-  if(!record.level){toast("Please select an activated learning continuity level.");return}
   state.continuityRecords.push(record);renderContinuityRecords();qs("#addContinuity").disabled=false;toast("Continuity-level record saved.");
 }
 qs("#saveEmergency").onclick=saveEmergencyRecord;
@@ -171,7 +195,7 @@ function renderMeActions(){
   }
   a.innerHTML=`<button class="btn secondary" type="button" id="saveDraft">Save</button><button class="btn green" type="button" id="submitME">Submit</button><button class="btn secondary" type="button" id="printME">Print</button><button class="btn red" type="button" id="pdfME">Save as PDF</button>`;
   qs("#saveDraft").onclick=async()=>{await api("/draft",{method:"POST",body:JSON.stringify({data:serializeForm()})});toast("Draft saved.")};
-  qs("#submitME").onclick=async()=>{const d=serializeForm();if(!d.monitoringDate){toast("Please enter the Date of Monitoring.");return}await api("/submit",{method:"POST",body:JSON.stringify({data:d})});toast("M&E report submitted successfully.")};
+  qs("#submitME").onclick=async()=>{if(!validateReportForSubmission())return;const d=serializeForm();await api("/submit",{method:"POST",body:JSON.stringify({data:d})});toast("M&E report submitted successfully.")};
   qs("#printME").onclick=()=>printMEReport();
   qs("#pdfME").onclick=()=>savePDF();
 }
