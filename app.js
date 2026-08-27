@@ -151,11 +151,15 @@ function savePDF(){
 async function renderDashboard(){
   const d=await api("/dashboard");
   let reports=d.recent||[];try{reports=(await api("/submissions")).submissions||reports}catch{}
-  const latest=[...new Map(reports.map(r=>[r.schoolId||r.schoolName,r])).values()];
+  const latest=[...reports.reduce((m,r)=>{const key=r.schoolId||r.schoolName;if(!m.has(key))m.set(key,r);return m},new Map()).values()];
   const scores=latest.map(scoreOfReport).filter(s=>s.percentage!=null);
   const average=scores.length?scores.reduce((n,s)=>n+s.percentage,0)/scores.length:null;
+  const overallRating=ratingFor(average);
+  const bands=[["Outstanding",scores.filter(s=>s.percentage>=90).length,"high"],["Very Satisfactory",scores.filter(s=>s.percentage>=80&&s.percentage<90).length,"high"],["Satisfactory",scores.filter(s=>s.percentage>=70&&s.percentage<80).length,"mid"],["Needs Improvement",scores.filter(s=>s.percentage>=60&&s.percentage<70).length,"mid"],["Needs Immediate Technical Assistance",scores.filter(s=>s.percentage<60).length,"low"]];
+  const overallClass=average==null?"neutral":average>=80?"high":average>=60?"mid":"low";
   qs("#dashboardPage").innerHTML=`<div class="page-title"><div><div class="kicker">ADMINISTRATOR</div><h2>Dashboard</h2><p>Division-wide status of registered schools and EIE M&E submissions.</p></div></div>
   <div class="stats"><div class="stat"><span>Registered Schools</span><strong>${d.registeredSchools}</strong></div><div class="stat"><span>Submitted Reports</span><strong>${d.submissions}</strong></div><div class="stat"><span>Division Average</span><strong>${average==null?"—":average.toFixed(2)+"%"}</strong></div><div class="stat"><span>Outstanding Schools</span><strong>${scores.filter(s=>s.percentage>=90).length}</strong></div></div>
+  <article class="card overall-card"><div class="overall-head"><div><div class="kicker">OVERALL DIVISION PERFORMANCE</div><h3>${esc(overallRating)}</h3><p>${scores.length} of ${d.registeredSchools} registered school${d.registeredSchools===1?"":"s"} evaluated using their latest submission.</p></div><div class="overall-score ${overallClass}">${average==null?"—":average.toFixed(2)+"%"}</div></div><div class="overall-progress"><span style="width:${average||0}%"></span></div><div class="band-grid">${bands.map(([label,count,tone])=>`<div class="band-item ${tone}"><strong>${count}</strong><span>${esc(label)}</span></div>`).join("")}</div>${bands[4][1]?`<div class="ta-alert"><strong>${bands[4][1]} school${bands[4][1]===1?"":"s"}</strong> currently need immediate technical assistance based on their latest rating.</div>`:""}</article>
   <article class="card"><h3>Latest School Ratings</h3>${renderSubmissionTable(latest,false)}</article>`;
 }
 function renderSubmissionTable(rows,actions=true){
