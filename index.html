@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=ai-legible&utm_source=comment&utm_medium=referral&utm_id=edd08f57-a746-4f33-829e-e21a9cfe13be
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<meta name="hosting-provider" content="Netlify">
+<meta name="netlify-deploy" content="https://netlify.new/?utm_campaign=ai-legible&amp;utm_source=meta&amp;utm_medium=referral&amp;utm_id=edd08f57-a746-4f33-829e-e21a9cfe13be">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DepEd Cebu Province EIE M&E System</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <div id="toast" class="toast hidden" aria-live="polite"></div>
+
+  <section id="authView" class="auth-page">
+    <div class="auth-panel">
+      <div class="brand-block">
+        <img src="/assets/cebu-province-logo.png" alt="Division of Cebu Province Department of Education logo" class="login-logo">
+        <div>
+          <div class="kicker">DEPARTMENT OF EDUCATION</div>
+          <h1>Education in Emergencies</h1>
+          <h2>Monitoring & Evaluation System</h2>
+          <p>Schools Division of Cebu Province</p>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button id="loginTab" class="tab active" type="button">Log In</button>
+          <button id="registerTab" class="tab" type="button">Create Account</button>
+        </div>
+
+        <form id="loginForm" class="auth-form">
+          <h3>Welcome back</h3>
+          <p class="muted">Sign in to continue to the M&E system.</p>
+          <label>Username
+            <input id="loginUsername" autocomplete="username" required>
+          </label>
+          <label>Password
+            <div class="password-wrap">
+              <input id="loginPassword" type="password" autocomplete="current-password" required>
+              <button id="toggleLoginPassword" type="button" class="text-btn">Show</button>
+            </div>
+          </label>
+          <button class="btn primary wide" type="submit">Log In</button>
+          <p id="loginError" class="error"></p>
+        </form>
+
+        <form id="registerForm" class="auth-form hidden">
+          <h3>Create School Account</h3>
+          <p class="muted">Register an ordinary user account for your school.</p>
+          <div class="grid two">
+            <label>District
+              <input id="regDistrict" required>
+            </label>
+            <label>Name of School
+              <input id="regSchoolName" required>
+            </label>
+            <label>School ID
+              <input id="regSchoolId" required inputmode="numeric">
+            </label>
+            <label>Username
+              <input id="regUsername" required autocomplete="username">
+            </label>
+            <label>Password
+              <input id="regPassword" type="password" required minlength="8" autocomplete="new-password">
+            </label>
+            <label>Confirm Password
+              <input id="regConfirmPassword" type="password" required minlength="8" autocomplete="new-password">
+            </label>
+          </div>
+          <button class="btn primary wide" type="submit">Create Account</button>
+          <p id="registerError" class="error"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="appView" class="hidden">
+    <header class="topbar">
+      <div class="top-brand">
+        <img src="/assets/cebu-province-logo.png" alt="" class="top-logo">
+        <div><strong>EIE M&E SYSTEM</strong><small>Schools Division of Cebu Province</small></div>
+      </div>
+      <div class="account-box">
+        <div>
+          <strong id="headerName">User</strong>
+          <small id="headerRole"></small>
+        </div>
+        <button id="logoutBtn" class="btn outline" type="button">Log Out</button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="sidebar">
+        <nav id="sidebarNav"></nav>
+      </aside>
+
+      <main class="main">
+        <section id="dashboardPage" class="page hidden"></section>
+
+        <section id="mePage" class="page hidden">
+          <div class="page-title">
+            <div>
+              <div class="kicker">MONITORING TOOL</div>
+              <h2>Education in Emergencies M&E Tool</h2>
+              <p>Complete the monitoring form and submit it to the division administrator.</p>
+            </div>
+            <div id="meActions" class="actions"></div>
+          </div>
+
+          <form id="meForm">
+            <article class="card">
+              <h3>Part I. School Profile</h3>
+              <div class="grid three">
+                <label>Region<input name="region" value="Region VII – Central Visayas"></label>
+                <label>Schools Division<input name="division" value="Cebu Province"></label>
+                <label>District<input name="district" id="meDistrict"></label>
+                <label>Name of School<input name="schoolName" id="meSchoolName"></label>
+                <label>School ID<input name="schoolId" id="meSchoolId"></label>
+                <label>School Year<input name="schoolYear" value="2026-2027"></label>
+                <label>Name of School Head<input name="schoolHead"></label>
+                <label>Designation<input name="designation"></label>
+                <label>Date of Monitoring<input name="monitoringDate" type="date"></label>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3>Part II. Emergency / Hazard Profile</h3>
+              <div class="grid two">
+                <label>Type of Emergency / Hazard
+                  <select name="hazardType">
+                    <option value="">Select...</option>
+                    <option>Tropical Cyclone / Storm</option>
+                    <option>Flood</option>
+                    <option>Earthquake</option>
+                    <option>Fire</option>
+                    <option>Landslide</option>
+                    <option>Power Interruption</option>
+                    <option>Health Emergency</option>
+                    <option>Armed Conflict / Security Threat</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <label>Date Emergency Occurred<input name="emergencyDate" type="date"></label>
+                <label>Affected Learners<input name="affectedLearners" type="number" min="0"></label>
+                <label>Affected Personnel<input name="affectedPersonnel" type="number" min="0"></label>
+              </div>
+              <label>Brief Situation Description<textarea name="situationDescription" rows="4"></textarea></label>
+            </article>
+
+            <article class="card">
+              <h3>Part III. Activated Learning Continuity Level</h3>
+              <div class="radio-grid">
+                <label><input type="radio" name="continuityLevel" value="Level 0 - Normal Operations"><span><b>Level 0</b><small>Normal Operations</small></span></label>
+                <label><input type="radio" name="continuityLevel" value="Level 1 - Preparedness / Alert"><span><b>Level 1</b><small>Preparedness / Alert</small></span></label>
+                <label><input type="radio" name="continuityLevel" value="Level 2 - Alternative Learning Delivery"><span><b>Level 2</b><small>Alternative Learning Delivery</small></span></label>
+                <label><input type="radio" name="continuityLevel" value="Level 3 - Full Emergency Response"><span><b>Level 3</b><small>Full Emergency Response</small></span></label>
+              </div>
+              <label>Learning Delivery Modality / Arrangement<textarea name="learningArrangement" rows="3"></textarea></label>
+            </article>
+
+            <article class="card">
+              <h3>Part IV. Compliance and Implementation Checklist</h3>
+              <div class="score-panel" aria-live="polite"><div><span class="score-label">LIVE OVERALL SCORE</span><strong id="liveScore">—</strong><small id="livePoints">Answer an applicable checklist item to calculate your score.</small></div><div id="liveRating" class="rating-pill neutral">Not yet rated</div></div>
+              <div class="rating-legend"><span><b>90–100</b> Outstanding</span><span><b>80–89</b> Very Satisfactory</span><span><b>70–79</b> Satisfactory</span><span><b>60–69</b> Needs Improvement</span><span><b>Below 60</b> Needs Immediate Technical Assistance</span></div>
+              <div class="table-wrap">
+                <table id="checklistTable">
+                  <thead><tr><th>#</th><th>Monitoring Indicator</th><th>Status</th><th>Means of Verification / Remarks</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3>Part V. Key Findings and Technical Assistance</h3>
+              <div class="grid two">
+                <label>Strengths / Good Practices<textarea name="strengths" rows="5"></textarea></label>
+                <label>Gaps / Issues / Concerns<textarea name="gaps" rows="5"></textarea></label>
+                <label>Technical Assistance Provided<textarea name="technicalAssistance" rows="5"></textarea></label>
+                <label>Agreed Next Steps / Action Points<textarea name="nextSteps" rows="5"></textarea></label>
+              </div>
+              <div class="grid three">
+                <label>Responsible Person<input name="responsiblePerson"></label>
+                <label>Target Completion Date<input name="targetDate" type="date"></label>
+                <label>Monitoring Status
+                  <select name="overallStatus">
+                    <option value="">Select...</option>
+                    <option>Compliant / Fully Implemented</option>
+                    <option>Partially Compliant / Ongoing</option>
+                    <option>Needs Technical Assistance</option>
+                    <option>For Immediate Action</option>
+                  </select>
+                </label>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3>Part VI. Monitoring Team / Certification</h3>
+              <div class="grid two">
+                <label>Monitored by<input name="monitoredBy"></label>
+                <label>Designation / Office<input name="monitorDesignation"></label>
+                <label>Validated / Acknowledged by<input name="validatedBy"></label>
+                <label>Designation<input name="validatedDesignation"></label>
+              </div>
+              <label>Additional Remarks<textarea name="additionalRemarks" rows="4"></textarea></label>
+            </article>
+          </form>
+        </section>
+
+        <section id="usersPage" class="page hidden"></section>
+        <section id="submissionsPage" class="page hidden"></section>
+        <section id="analyticsPage" class="page hidden"></section>
+        <section id="myReportsPage" class="page hidden"></section>
+        <section id="profilePage" class="page hidden"></section>
+        <section id="settingsPage" class="page hidden"></section>
+      </main>
+    </div>
+  </section>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-card">
+      <button id="modalClose" class="modal-close" type="button">×</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+</body>
+</html>
