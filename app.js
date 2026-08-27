@@ -126,14 +126,17 @@ function fillForm(data){
   updateLiveScore();
 }
 async function loadDraft(){
-  if(state.user.role==="admin"){qs("#meForm").reset();buildChecklist();return}
   buildChecklist();fillSchoolProfile();
   try{const d=await api("/draft");if(d.draft)fillForm(d.draft)}catch{}
   fillSchoolProfile();
 }
 function renderMeActions(){
   const a=qs("#meActions");a.innerHTML="";
-  if(state.user.role==="admin"){a.innerHTML=`<button class="btn secondary" type="button" id="adminPrint">Print Blank Tool</button>`;qs("#adminPrint").onclick=()=>window.print();return}
+  if(state.user.role==="admin"){
+    a.innerHTML=`<button class="btn primary" type="button" id="adminSave">Save</button><button class="btn secondary" type="button" id="adminPrint">Print Blank Tool</button>`;
+    qs("#adminSave").onclick=async()=>{try{await api("/draft",{method:"POST",body:JSON.stringify({data:serializeForm()})});toast("M&E record saved successfully.")}catch(err){toast(err.message)}};
+    qs("#adminPrint").onclick=()=>window.print();return
+  }
   a.innerHTML=`<button class="btn secondary" type="button" id="saveDraft">Save</button><button class="btn green" type="button" id="submitME">Submit</button><button class="btn secondary" type="button" id="printME">Print</button><button class="btn red" type="button" id="pdfME">Save as PDF</button>`;
   qs("#saveDraft").onclick=async()=>{await api("/draft",{method:"POST",body:JSON.stringify({data:serializeForm()})});toast("Draft saved.")};
   qs("#submitME").onclick=async()=>{const d=serializeForm();if(!d.monitoringDate){toast("Please enter the Date of Monitoring.");return}await api("/submit",{method:"POST",body:JSON.stringify({data:d})});toast("M&E report submitted successfully.")};
