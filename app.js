@@ -31,9 +31,9 @@ function toast(msg){const t=qs("#toast");t.textContent=msg;t.classList.remove("h
 async function api(path,opts={}){
   const headers={"Content-Type":"application/json",...(opts.headers||{})};
   if(state.token) headers.Authorization=`Bearer ${state.token}`;
-  const r=await fetch(API+path,{...opts,headers});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok) throw new Error(data.error||"Request failed");
+  let r;try{r=await fetch(API+path,{...opts,headers})}catch{throw new Error("Cannot connect to the website service. Please refresh and try again.")}
+  const raw=await r.text();let data={};try{data=raw?JSON.parse(raw):{}}catch{}
+  if(!r.ok) throw new Error(data.error||(r.status>=500?"The website service is temporarily unavailable. Please try again.":"Request failed."));
   return data;
 }
 function setTabs(mode){

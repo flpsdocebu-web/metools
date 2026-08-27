@@ -5,7 +5,9 @@ import crypto from "node:crypto";
 const ADMIN_USERNAME="admin";
 const ADMIN_BOOTSTRAP_PASSWORD=process.env.ADMIN_BOOTSTRAP_PASSWORD||"";
 const TOKEN_SECRET=process.env.APP_SECRET || "replace-this-with-a-long-secret-before-production";
-const store=getStore("eie-me-system");
+// Create the store client at operation time so long-lived function instances
+// never retain an expired Netlify Blobs access token.
+const blobStore=()=>getStore({name:"eie-me-system",consistency:"strong"});
 
 const json=(data,status=200)=>Response.json(data,{status,headers:{"Cache-Control":"no-store"}});
 const keySafe=s=>String(s||"").trim().toLowerCase().replace(/[^a-z0-9._-]/g,"");
@@ -34,10 +36,10 @@ function verifyToken(token){
     if(p.exp<Date.now())return null; return p;
   }catch{return null}
 }
-async function getUsers(){return await store.get("users",{type:"json"})||[]}
-async function setUsers(users){await store.setJSON("users",users)}
-async function getSubIndex(){return await store.get("submission-index",{type:"json"})||[]}
-async function setSubIndex(x){await store.setJSON("submission-index",x)}
+async function getUsers(){return await blobStore().get("users",{type:"json"})||[]}
+async function setUsers(users){await blobStore().setJSON("users",users)}
+async function getSubIndex(){return await blobStore().get("submission-index",{type:"json"})||[]}
+async function setSubIndex(x){await blobStore().setJSON("submission-index",x)}
 
 async function ensureAdmin(){
   const users=await getUsers();
@@ -56,9 +58,9 @@ async function auth(req,adminOnly=false){
 }
 
 export default async (req,context)=>{
-  await ensureAdmin();
   const url=new URL(req.url);const path=url.pathname.replace(/^\/api/,"")||"/";
   try{
+    await ensureAdmin();
     if(path==="/register"&&req.method==="POST"){
       const b=await req.json(); const username=keySafe(b.username);
       if(!b.district||!b.schoolName||!b.schoolId||!username||!b.password) return json({error:"All registration fields are required."},400);
@@ -84,18 +86,18 @@ export default async (req,context)=>{
       users=users.filter(u=>u.id!==b.id);await setUsers(users);return json({ok:true});
     }
     if(path==="/draft"&&req.method==="GET"){
-      const u=await auth(req);const draft=await store.get(`draft-${u.id}`,{type:"json"});return json({draft:draft||null});
+      const u=await auth(req);const draft=await blobStore().get(`draft-${u.id}`,{type:"json"});return json({draft:draft||null});
     }
     if(path==="/draft"&&req.method==="POST"){
-      const u=await auth(req);const b=await req.json();const data=b.data||{};data.savedAt=now();await store.setJSON(`draft-${u.id}`,data);return json({ok:true,savedAt:data.savedAt});
+      const u=await auth(req);const b=await req.json();const data=b.data||{};data.savedAt=now();await blobStore().setJSON(`draft-${u.id}`,data);return json({ok:true,savedAt:data.savedAt});
     }
     if(path==="/submit"&&req.method==="POST"){
       const u=await auth(req);if(u.role==="admin")return json({error:"Administrator cannot submit a school report."},400);
       const b=await req.json();const id=crypto.randomUUID();const report={id,userId:u.id,username:u.username,district:u.district,schoolName:u.schoolName,schoolId:u.schoolId,submittedAt:now(),status:"Submitted",data:b.data||{}};
-      await store.setJSON(`report-${id}`,report);const idx=await getSubIndex();idx.unshift({id,userId:u.id,district:u.district,schoolName:u.schoolName,schoolId:u.schoolId,submittedAt:report.submittedAt,status:report.status});await setSubIndex(idx.slice(0,5000));return json({ok:true,id});
+      await blobStore().setJSON(`report-${id}`,report);const idx=await getSubIndex();idx.unshift({id,userId:u.id,district:u.district,schoolName:u.schoolName,schoolId:u.schoolId,submittedAt:report.submittedAt,status:report.status});await setSubIndex(idx.slice(0,5000));return json({ok:true,id});
     }
     if(path==="/submissions"&&req.method==="GET"){await auth(req,true);return json({submissions:await getSubIndex()})}
-    if(path==="/submission"&&req.method==="GET"){await auth(req,true);const r=await store.get(`report-${url.searchParams.get("id")}`,{type:"json"});if(!r)return json({error:"Report not found."},404);return json({report:r})}
+    if(path==="/submission"&&req.method==="GET"){await auth(req,true);const r=await blobStore().get(`report-${url.searchParams.get("id")}`,{type:"json"});if(!r)return json({error:"Report not found."},404);return json({report:r})}
     if(path==="/my-submissions"&&req.method==="GET"){const u=await auth(req);const idx=await getSubIndex();return json({submissions:idx.filter(x=>x.userId===u.id)})}
     if(path==="/dashboard"&&req.method==="GET"){
       await auth(req,true);const users=await getUsers();const idx=await getSubIndex();const ordinary=users.filter(u=>u.role==="user");
@@ -112,6 +114,7 @@ export default async (req,context)=>{
     if(err.message==="ADMIN_SETUP_REQUIRED")return json({error:"Administrator setup is incomplete."},503);
     if(err.message==="UNAUTHORIZED")return json({error:"Your session has expired. Please log in again."},401);
     if(err.message==="FORBIDDEN")return json({error:"Administrator access required."},403);
+    if(err.name==="BlobsInternalError"||String(err.message).includes("decode token"))return json({error:"The database connection expired. Please refresh the page and try again."},503);
     console.error(err);return json({error:"Server error."},500);
   }
 };
