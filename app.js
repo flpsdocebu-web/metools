@@ -99,6 +99,9 @@ function validateReportForSubmission(){
   return true;
 }
 buildChecklist();
+const enrollmentNames=["enrollmentKinder","enrollmentES","enrollmentJHS","enrollmentSHS","enrollmentALS"];
+function updateEnrollmentTotal(){const total=enrollmentNames.reduce((sum,name)=>sum+(Number(formValue(name))||0),0),field=qs("#meForm")?.elements.namedItem("enrollmentTotal");if(field)field.value=total}
+enrollmentNames.forEach(name=>qs("#meForm").elements.namedItem(name)?.addEventListener("input",updateEnrollmentTotal));
 
 function navItems(){
   if(state.user.role==="admin") return [
@@ -155,6 +158,7 @@ function fillForm(data){
     if(s)s.value=x.status||"";if(r)r.value=x.remarks||"";
   });
   renderEmergencyRecords();renderContinuityRecords();
+  updateEnrollmentTotal();
   updateLiveScore();
 }
 function formValue(name){return qs("#meForm").elements.namedItem(name)?.value||""}
@@ -223,7 +227,7 @@ function buildPrintReport(){
     </div>
     <div class="print-sheet">
       <h2 class="section-title">1. School Profile</h2>
-      <table class="form-table">${printCell("Region / SDO / District",[d.region,d.division,d.district].filter(Boolean).join(" / "))}${printCell("School Name / School ID",[d.schoolName,d.schoolId].filter(Boolean).join(" / "))}${printCell("School Year",d.schoolYear)}${printCell("School Head / Designation",[d.schoolHead,d.designation].filter(Boolean).join(" / "))}${printCell("Monitoring Date",printDate(d.monitoringDate))}${printCell("Emergency / hazard and affected area",emergencies.map(x=>[x.hazardType,x.affectedArea].filter(Boolean).join(" — ")).join("; "))}${printCell("Learners / personnel affected",emergencies.map(x=>`${x.affectedLearners||0} learners / ${x.affectedPersonnel||0} personnel`).join("; "))}</table>
+      <table class="form-table">${printCell("Region / SDO / District",[d.region,d.division,d.district].filter(Boolean).join(" / "))}${printCell("School Name / School ID",[d.schoolName,d.schoolId].filter(Boolean).join(" / "))}${printCell("School Address / Contact Details",[d.schoolAddress,d.schoolContact].filter(Boolean).join(" / "))}${printCell("School Head / Contact Number",[d.schoolHead,d.schoolHeadContact].filter(Boolean).join(" / "))}${printCell("School Type",d.schoolType)}${printCell("Classification / Location",d.schoolClassification)}${printCell("Enrollment",`Kinder: ${d.enrollmentKinder||0} | ES: ${d.enrollmentES||0} | JHS: ${d.enrollmentJHS||0} | SHS: ${d.enrollmentSHS||0} | ALS: ${d.enrollmentALS||0} | Total: ${d.enrollmentTotal||0}`)}${printCell("Personnel",`Teaching: ${d.personnelTeaching||0} | Non-teaching: ${d.personnelNonTeaching||0} | ALS Implementers: ${d.personnelALS||0} | Volunteers/Partners: ${d.personnelVolunteers||0}`)}${printCell("Major hazards / recurring disruptions",d.recurringHazards)}${printCell("Date LSCP developed / last updated",printDate(d.lscpUpdatedDate))}${printCell("Stakeholders involved in LSCP development",d.lscpStakeholders)}${printCell("LSCP reflected in SIP/AIP",`${d.lscpInSipAip||""} | Reference / page: ${d.lscpReference||""}`)}${printCell("School Year / Monitoring Date",`${d.schoolYear||""} / ${printDate(d.monitoringDate)}`)}</table>
       <h2 class="section-title">2. Activated Learning Continuity Level</h2>
       <table class="report-grid"><thead><tr><th>Selected Level</th><th>Learning Delivery Arrangement</th><th>Date Activated</th><th>Status / Duration</th><th>Basis / Local Evidence</th></tr></thead><tbody>${activations.length?activations.map(x=>`<tr><td>${esc(x.level||"")}</td><td>${esc(x.arrangement||"")}</td><td>${esc(printDate(x.activationDate))}</td><td>${esc([x.status,x.duration].filter(Boolean).join(" / "))}</td><td>${esc(x.notes||"")}</td></tr>`).join(""):`<tr><td colspan="5" class="blank-row"></td></tr>`}</tbody></table>
       <h3 class="sub-title">Emergency / Hazard Record</h3>

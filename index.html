@@ -126,10 +126,38 @@
                 <label>Name of School<input name="schoolName" id="meSchoolName"></label>
                 <label>School ID<input name="schoolId" id="meSchoolId"></label>
                 <label>School Year<input name="schoolYear" value="2026-2027"></label>
+                <label>School Address<input name="schoolAddress"></label>
+                <label>School Contact Details<input name="schoolContact" placeholder="Telephone, mobile number, or email"></label>
                 <label>Name of School Head<input name="schoolHead"></label>
+                <label>School Head Contact Number<input name="schoolHeadContact" type="tel"></label>
                 <label>Designation<input name="designation"></label>
                 <label>Date of Monitoring<input name="monitoringDate" type="date"></label>
+                <label>School Type<select name="schoolType"><option value="">Select...</option><option>Elementary</option><option>Secondary</option><option>Integrated</option><option>CLC/ALS</option><option>Other</option></select></label>
+                <label>Classification / Location<select name="schoolClassification"><option value="">Select...</option><option>Urban</option><option>Rural</option><option>Coastal</option><option>Island</option><option>Indigenous Community</option><option>Other</option></select></label>
               </div>
+              <h4 class="form-subheading">Enrollment</h4>
+              <div class="grid enrollment-grid">
+                <label>Kinder<input name="enrollmentKinder" type="number" min="0"></label>
+                <label>Elementary<input name="enrollmentES" type="number" min="0"></label>
+                <label>JHS<input name="enrollmentJHS" type="number" min="0"></label>
+                <label>SHS<input name="enrollmentSHS" type="number" min="0"></label>
+                <label>ALS<input name="enrollmentALS" type="number" min="0"></label>
+                <label>Total<input name="enrollmentTotal" type="number" value="0" readonly></label>
+              </div>
+              <h4 class="form-subheading">Personnel</h4>
+              <div class="grid four">
+                <label>Teaching<input name="personnelTeaching" type="number" min="0"></label>
+                <label>Non-teaching<input name="personnelNonTeaching" type="number" min="0"></label>
+                <label>ALS Implementers<input name="personnelALS" type="number" min="0"></label>
+                <label>Volunteers / Partners<input name="personnelVolunteers" type="number" min="0"></label>
+              </div>
+              <div class="grid two">
+                <label>Major Hazards / Recurring Disruptions<textarea name="recurringHazards" rows="3" placeholder="Profile-level recurring risks; enter specific incidents in Part II."></textarea></label>
+                <label>Date LSCP Developed / Last Updated<input name="lscpUpdatedDate" type="date"></label>
+                <label>Stakeholders Involved in LSCP Development<textarea name="lscpStakeholders" rows="3"></textarea></label>
+                <label>LSCP Reflected in SIP/AIP<select name="lscpInSipAip"><option value="">Select...</option><option>Yes</option><option>Partly</option><option>No</option></select></label>
+              </div>
+              <label>SIP/AIP Reference / Page<input name="lscpReference"></label>
             </article>
 
             <article class="card">

@@ -13,3 +13,4 @@
 @media(max-width:900px){.grid.four{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.grid.four{grid-template-columns:1fr}.saved-record{flex-direction:column}.saved-record .btn{width:100%}}
 .required-note{margin:0 0 12px;color:#8f2828;font-size:12px;font-weight:700}.required-note span,.required-field:after{color:#c62828}.required-field{position:relative}.required-field:after{content:"*";position:absolute;right:3px;top:0;font-weight:900}
+.form-subheading{margin:8px 0 12px;color:var(--navy);font-size:14px}.enrollment-grid{grid-template-columns:repeat(6,minmax(0,1fr))}input[readonly]{background:#f1f5f9;color:#42566c}@media(max-width:900px){.enrollment-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:620px){.enrollment-grid{grid-template-columns:1fr 1fr}}
