@@ -50,7 +50,7 @@ const indicators=[
 {domain:"H. Monitoring, Reporting, and Improvement",text:"After-action review identifies lessons, effective practices, unresolved risks, and actions for LSCP improvement."},
 {domain:"H. Monitoring, Reporting, and Improvement",text:"Technical assistance needs, responsible persons, timelines, and follow-through status are documented and monitored."}
 ];
-let state={token:null,user:null,emergencyRecords:[],continuityRecords:[]};
+let state={token:null,user:null,emergencyRecords:[],continuityRecords:[],technicalAssistanceRecords:[]};
 const scoreValues={"Compliant":3,"Partially Compliant":2,"Not Compliant":1};
 function ratingFor(p){if(p==null)return"Not yet rated";if(p>=90)return"Outstanding";if(p>=80)return"Very Satisfactory";if(p>=70)return"Satisfactory";if(p>=60)return"Needs Improvement";return"Needs Immediate Technical Assistance"}
 function calculateScore(items){const a=(items||[]).filter(x=>Object.hasOwn(scoreValues,x.status));const earned=a.reduce((n,x)=>n+scoreValues[x.status],0),maximum=a.length*3,percentage=maximum?Math.round(earned/maximum*10000)/100:null;return{earnedPoints:earned,maximumPoints:maximum,applicableItems:a.length,percentage,rating:ratingFor(percentage)}}
@@ -99,7 +99,7 @@ qs("#registerForm").addEventListener("submit",async e=>{
     toast("Account created and submitted for administrator approval.");qs("#registerForm").reset();setTabs("login");
   }catch(err){qs("#registerError").textContent=err.message}
 });
-qs("#logoutBtn").addEventListener("click",()=>{sessionStorage.removeItem("eieToken");state={token:null,user:null};qs("#appView").classList.add("hidden");qs("#authView").classList.remove("hidden")});
+qs("#logoutBtn").addEventListener("click",()=>{sessionStorage.removeItem("eieToken");state={token:null,user:null,emergencyRecords:[],continuityRecords:[],technicalAssistanceRecords:[]};qs("#appView").classList.add("hidden");qs("#authView").classList.remove("hidden")});
 
 function buildChecklist(){
   const tb=qs("#checklistTable tbody");tb.innerHTML="";
@@ -108,11 +108,12 @@ function buildChecklist(){
 }
 const emergencyFieldNames=["hazardType","emergencyDate","affectedArea","levelActivatedAt","affectedLearners","affectedPersonnel","decisionMaker","reportedAt","reviewDate","situationDescription","assessmentSources","activatedResources","communicationChannels"];
 const continuityFieldNames=["continuityLevel","learningArrangement","continuityActivationDate","continuityDuration","continuityResponsible","continuityStatus","continuityNotes"];
+const taFieldNames=["taIssue","taRootCause","taProvided","taResponsible","taTimeline","taStatus","taFollowUp"];
 function configureRequiredFields(){
   const form=qs("#meForm");if(!form)return;
   qsa("#meForm label").forEach(label=>label.classList.add("required-field"));
   qsa("#meForm input,#meForm select,#meForm textarea").forEach(el=>{
-    if(el.type!=="button"&&!emergencyFieldNames.includes(el.name)&&!continuityFieldNames.includes(el.name))el.required=true;
+    if(el.type!=="button"&&!emergencyFieldNames.includes(el.name)&&!continuityFieldNames.includes(el.name)&&!taFieldNames.includes(el.name))el.required=true;
   });
 }
 function validateNamedFields(names,message){
@@ -128,6 +129,8 @@ function validateReportForSubmission(){
   if(!(state.emergencyRecords||[]).length){toast("Save at least one complete Emergency / Hazard record before submitting.");qs("#saveEmergency")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
   if(state.emergencyRecords.some(record=>emergencyFieldNames.some(name=>String(record[name]??"").trim()===""))){toast("Every saved Emergency / Hazard record must contain all required activation details.");qs("#emergencyRecords")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
   if(!(state.continuityRecords||[]).length){toast("Save at least one complete Learning Continuity activation before submitting.");qs("#saveContinuity")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
+  if(!(state.technicalAssistanceRecords||[]).length){toast("Save at least one complete Technical Assistance record before submitting.");qs("#saveTA")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
+  if(state.technicalAssistanceRecords.some(record=>taFieldNames.some(name=>String(record[name]??"").trim()===""))){toast("Every saved Technical Assistance record must contain all required details.");qs("#taRecords")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
   const form=qs("#meForm");if(!form.reportValidity()){toast("Please complete every required field marked with an asterisk.");return false}
   return true;
 }
@@ -172,6 +175,7 @@ function serializeForm(){
   d.checklist=indicators.map((item,i)=>({indicator:item.text,domain:item.domain,status:d[`indicator_${i}_status`]||"",mov:d[`indicator_${i}_mov`]||"",findings:d[`indicator_${i}_findings`]||"",action:d[`indicator_${i}_action`]||""}));
   d.emergencies=state.emergencyRecords||[];
   d.continuityActivations=state.continuityRecords||[];
+  d.technicalAssistanceRecords=state.technicalAssistanceRecords||[];
   d.score=calculateScore(d.checklist);
   return d;
 }
@@ -181,6 +185,8 @@ function fillForm(data){
   if(legacyLevels[data.continuityLevel])data={...data,continuityLevel:legacyLevels[data.continuityLevel]};
   state.emergencyRecords=Array.isArray(data.emergencies)?data.emergencies:[];
   state.continuityRecords=Array.isArray(data.continuityActivations)?data.continuityActivations.map(x=>({...x,level:legacyLevels[x.level]||x.level})):[];
+  state.technicalAssistanceRecords=Array.isArray(data.technicalAssistanceRecords)?data.technicalAssistanceRecords:[];
+  if(!state.technicalAssistanceRecords.length&&(data.technicalAssistance||data.responsiblePerson||data.overallStatus))state.technicalAssistanceRecords=[{taIssue:data.gaps||"Legacy report issue / gap",taRootCause:"Not specified in legacy report",taProvided:data.technicalAssistance||"Not specified in legacy report",taResponsible:data.responsiblePerson||"Not specified in legacy report",taTimeline:data.targetDate||"Not specified",taStatus:String(data.overallStatus||"").includes("Fully")?"Completed":String(data.overallStatus||"").includes("Ongoing")?"Ongoing":"Open",taFollowUp:data.nextSteps||"Not specified in legacy report"}];
   for(const [k,v] of Object.entries(data)){
     if(k==="checklist"||v==null||typeof v==="object")continue;
     const el=qs("#meForm").elements.namedItem(k);if(!el)continue;
@@ -191,7 +197,7 @@ function fillForm(data){
     const fields={status:x.status||"",mov:x.mov||x.remarks||"",findings:x.findings||"",action:x.action||""};
     Object.entries(fields).forEach(([key,value])=>{const el=qs("#meForm").elements.namedItem(`indicator_${i}_${key}`);if(el)el.value=value});
   });
-  renderEmergencyRecords();renderContinuityRecords();
+  renderEmergencyRecords();renderContinuityRecords();renderTARecords();
   updateEnrollmentTotal();
   updateLiveScore();
 }
@@ -217,13 +223,25 @@ function saveContinuityRecord(){
   const record={level:formValue("continuityLevel"),arrangement:formValue("learningArrangement"),activationDate:formValue("continuityActivationDate"),duration:formValue("continuityDuration"),responsible:formValue("continuityResponsible"),status:formValue("continuityStatus"),notes:formValue("continuityNotes"),savedAt:new Date().toISOString()};
   state.continuityRecords.push(record);renderContinuityRecords();qs("#addContinuity").disabled=false;toast("Continuity-level record saved.");
 }
+function renderTARecords(){
+  const box=qs("#taRecords");if(!box)return;const rows=state.technicalAssistanceRecords||[];
+  box.innerHTML=rows.length?rows.map((r,i)=>`<div class="saved-record"><div><span class="record-number">Technical Assistance ${i+1}</span><strong>${esc(r.taIssue)}</strong><small>${esc(r.taStatus||"Status not specified")} • ${esc(r.taResponsible||"Responsible person not specified")} • ${esc(printDate(r.taTimeline))}</small><p><b>Root cause:</b> ${esc(r.taRootCause||"—")}</p><p><b>Assistance:</b> ${esc(r.taProvided||"—")}</p><small><b>Follow-up / Evidence:</b> ${esc(r.taFollowUp||"—")}</small></div><button class="btn red remove-ta" data-index="${i}" type="button">Remove</button></div>`).join(""):`<p class="muted">No technical assistance records saved yet.</p>`;
+  qsa(".remove-ta").forEach(b=>b.onclick=()=>{state.technicalAssistanceRecords.splice(Number(b.dataset.index),1);renderTARecords();toast("Technical assistance record removed.")});
+}
+function saveTARecord(){
+  if(!validateNamedFields(taFieldNames,"Please complete all required Technical Assistance fields."))return;
+  const record=Object.fromEntries(taFieldNames.map(name=>[name,formValue(name)]));record.savedAt=new Date().toISOString();
+  state.technicalAssistanceRecords.push(record);renderTARecords();qs("#addTA").disabled=false;toast("Technical assistance record saved.");
+}
 qs("#saveEmergency").onclick=saveEmergencyRecord;
 qs("#addEmergency").onclick=()=>{clearFields(emergencyFieldNames);qs("#addEmergency").disabled=true;toast("Ready for another emergency record.")};
 qs("#saveContinuity").onclick=saveContinuityRecord;
 qs("#addContinuity").onclick=()=>{clearFields(["continuityLevel","learningArrangement","continuityActivationDate","continuityDuration","continuityResponsible","continuityStatus","continuityNotes"]);qs("#addContinuity").disabled=true;toast("Ready for another continuity activation.")};
+qs("#saveTA").onclick=saveTARecord;
+qs("#addTA").onclick=()=>{clearFields(taFieldNames);qs("#addTA").disabled=true;toast("Ready for another technical assistance entry.")};
 async function loadDraft(){
   buildChecklist();fillSchoolProfile();
-  state.emergencyRecords=[];state.continuityRecords=[];renderEmergencyRecords();renderContinuityRecords();
+  state.emergencyRecords=[];state.continuityRecords=[];state.technicalAssistanceRecords=[];renderEmergencyRecords();renderContinuityRecords();renderTARecords();
   try{const d=await api("/draft");if(d.draft)fillForm(d.draft)}catch{}
   fillSchoolProfile();
 }
@@ -251,6 +269,7 @@ function buildPrintReport(){
   const counts={C:0,PC:0,NC:0,NA:0};(d.checklist||[]).forEach(x=>{if(short[x.status])counts[short[x.status]]++});
   const emergencies=(d.emergencies?.length?d.emergencies:[Object.fromEntries(emergencyFieldNames.map(name=>[name,d[name]]))]).filter(x=>x.hazardType||x.emergencyDate||x.situationDescription);
   const activations=(d.continuityActivations?.length?d.continuityActivations:[{level:d.continuityLevel,arrangement:d.learningArrangement,activationDate:d.continuityActivationDate,duration:d.continuityDuration,responsible:d.continuityResponsible,status:d.continuityStatus,notes:d.continuityNotes}]).filter(x=>x.level||x.arrangement);
+  const taRecords=d.technicalAssistanceRecords?.length?d.technicalAssistanceRecords:(d.technicalAssistance||d.responsiblePerson?[{taIssue:d.gaps,taRootCause:"",taProvided:d.technicalAssistance,taResponsible:d.responsiblePerson,taTimeline:d.targetDate,taStatus:d.overallStatus,taFollowUp:d.nextSteps}]:[]);
   let printedDomain="";const checkRows=(d.checklist||[]).map((x,i)=>{const domain=x.domain||indicators[i]?.domain||"";const heading=domain!==printedDomain?`<tr class="print-domain"><th colspan="9">${esc(domain)}</th></tr>`:"";printedDomain=domain;return`${heading}<tr><td class="center">${i+1}</td><td>${esc(x.indicator)}</td><td class="center mark">${x.status==="Compliant"?"✓":""}</td><td class="center mark">${x.status==="Partially Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Applicable"?"✓":""}</td><td>${esc(x.mov||x.remarks||"")}</td><td>${esc(x.findings||"")}</td><td>${esc(x.action||"")}</td></tr>`}).join("");
   const domainRows=[...new Set(indicators.map(x=>x.domain))].map(domain=>{const items=(d.checklist||[]).filter((x,i)=>(x.domain||indicators[i]?.domain)===domain),domainScore=calculateScore(items),domainCounts={C:0,PC:0,NC:0,NA:0};items.forEach(x=>{if(short[x.status])domainCounts[short[x.status]]++});return`<tr><td>${esc(domain.replace(/^[A-H]\. /,""))}</td><td>${domainCounts.C}</td><td>${domainCounts.PC}</td><td>${domainCounts.NC}</td><td>${domainCounts.NA}</td><td>${domainScore.applicableItems}</td><td>${domainScore.percentage==null?"—":domainScore.percentage.toFixed(2)+"%"}</td></tr>`}).join("");
   qs("#printReport").innerHTML=`
@@ -279,10 +298,14 @@ function buildPrintReport(){
       <table class="report-grid summary-table domain-summary"><thead><tr><th>Domain</th><th>C</th><th>PC</th><th>NC</th><th>NA</th><th>Applicable Items</th><th>Score</th></tr></thead><tbody>${domainRows}<tr class="summary-total"><td><b>TOTAL / OVERALL</b></td><td>${counts.C}</td><td>${counts.PC}</td><td>${counts.NC}</td><td>${counts.NA}</td><td>${score.applicableItems}</td><td><b>${score.percentage==null?"—":score.percentage.toFixed(2)+"%"}</b></td></tr></tbody></table>
       <p class="overall-print-rating"><b>Descriptive Rating:</b> ${esc(score.rating)} &nbsp; | &nbsp; <b>Points:</b> ${score.earnedPoints} of ${score.maximumPoints}</p>
       <p class="guide"><b>Automatic computation used by the online tool:</b> earned points ÷ maximum applicable points × 100. Compliant = 3; Partially Compliant = 2; Not Compliant = 1; Not Applicable is excluded.</p>
+    </div>
+    <div class="print-sheet print-landscape">
       <h2 class="section-title">6. Summary of Technical Assistance</h2>
-      <table class="report-grid ta-table"><thead><tr><th>Issue / Gap</th><th>Technical Assistance Provided / Agreed</th><th>Responsible Person / Office</th><th>Timeline</th><th>Status</th><th>Follow-up / Evidence</th></tr></thead><tbody><tr><td>${esc(d.gaps||"")}</td><td>${esc(d.technicalAssistance||"")}</td><td>${esc(d.responsiblePerson||"")}</td><td>${esc(printDate(d.targetDate))}</td><td>${esc(d.overallStatus||"")}</td><td>${esc(d.nextSteps||"")}</td></tr></tbody></table>
+      <table class="report-grid ta-table"><thead><tr><th>No.</th><th>Issue / Gap</th><th>Root Cause</th><th>Technical Assistance Provided / Agreed</th><th>Responsible Person / Office</th><th>Timeline</th><th>Status</th><th>Follow-up / Evidence</th></tr></thead><tbody>${taRecords.length?taRecords.map((x,i)=>`<tr><td class="center">${i+1}</td><td>${esc(x.taIssue||"")}</td><td>${esc(x.taRootCause||"")}</td><td>${esc(x.taProvided||"")}</td><td>${esc(x.taResponsible||"")}</td><td>${esc(printDate(x.taTimeline))}</td><td>${esc(x.taStatus||"")}</td><td>${esc(x.taFollowUp||"")}</td></tr>`).join(""):Array.from({length:6},(_,i)=>`<tr><td class="center">${i+1}</td><td></td><td></td><td></td><td></td><td></td><td>☐ Open<br>☐ Ongoing<br>☐ Completed</td><td></td></tr>`).join("")}</tbody></table>
+    </div>
+    <div class="print-sheet">
       <h2 class="section-title">7. Overall Findings and Recommendations</h2>
-      <div class="narrative"><h3>Key strengths / good practices</h3><p>${esc(d.strengths||"")}</p><h3>Priority gaps / risks requiring action</h3><p>${esc(d.gaps||"")}</p><h3>Recommendations and agreed next steps</h3><p>${esc(d.nextSteps||"")}</p><h3>Additional remarks</h3><p>${esc(d.additionalRemarks||"")}</p></div>
+      <div class="narrative"><h3>Key strengths / good practices</h3><p>${esc(d.strengths||"")}</p><h3>Priority gaps / risks requiring action</h3><p>${esc(d.gaps||"")}</p><h3>Recommendations and agreed next steps</h3><p>${esc(d.nextSteps||"")}</p><h3>Support required from District / SDO / partners</h3><p>${esc(d.supportRequired||"")}</p><h3>Additional remarks</h3><p>${esc(d.additionalRemarks||"")}</p></div>
       <h2 class="section-title">8. Signatures and Acknowledgment</h2>
       <p class="acknowledgment">The findings and agreed technical assistance/actions were discussed with the concerned school personnel. Signatures acknowledge receipt and discussion.</p>
       <div class="signature-grid"><div><span>${esc(d.schoolHead||"")}</span><b>School Head</b><small>${esc(d.designation||"")}</small></div><div><span>${esc(d.validatedBy||"")}</span><b>Validated / Acknowledged by</b><small>${esc(d.validatedDesignation||"")}</small></div><div><span>${esc(d.monitoredBy||"")}</span><b>Evaluator / M&E Team Leader</b><small>${esc(d.monitorDesignation||"")}</small></div></div>
@@ -298,7 +321,7 @@ async function renderDashboard(){
   const average=scores.length?scores.reduce((n,s)=>n+s.percentage,0)/scores.length:null;
   const overallRating=ratingFor(average);
   const latestChecklist=latest.flatMap(r=>r.data?.checklist||[]),answeredItems=latestChecklist.filter(x=>x.status).length,expectedItems=latest.reduce((n,r)=>n+(r.data?.checklist?.length||indicators.length),0),completionRate=expectedItems?answeredItems/expectedItems*100:null;
-  const emergencyRecords=latest.flatMap(r=>r.data?.emergencies||[]),continuityRecords=latest.flatMap(r=>r.data?.continuityActivations?.length?r.data.continuityActivations:(r.data?.continuityLevel?[{level:r.data.continuityLevel}]:[]));
+  const emergencyRecords=latest.flatMap(r=>r.data?.emergencies||[]),continuityRecords=latest.flatMap(r=>r.data?.continuityActivations?.length?r.data.continuityActivations:(r.data?.continuityLevel?[{level:r.data.continuityLevel}]:[])),technicalAssistanceRecords=latest.flatMap(r=>r.data?.technicalAssistanceRecords||[]);
   const continuityBands=["HAYO","HINAY","HINGA","HINTO"].map(level=>[level,continuityRecords.filter(x=>String(x.level||"").toUpperCase().startsWith(level)).length]);
   const urgentActivations=continuityBands.filter(([level])=>level==="HINGA"||level==="HINTO").reduce((n,[,count])=>n+count,0);
   const domainPerformance=[...new Set(indicators.map(x=>x.domain))].map(domain=>{const items=latestChecklist.filter((x,i)=>(x.domain||indicators.find(y=>y.text===x.indicator)?.domain)===domain),s=calculateScore(items);return{domain:domain.replace(/^[A-H]\. /,""),percentage:s.percentage,applicable:s.applicableItems}});
@@ -309,7 +332,7 @@ async function renderDashboard(){
   const overallClass=average==null?"neutral":average>=80?"high":average>=60?"mid":"low";
   qs("#dashboardPage").innerHTML=`<div class="page-title"><div><div class="kicker">ADMINISTRATOR</div><h2>Dashboard</h2><p>Division-wide status of registered schools and EIE M&E submissions.</p></div></div>
   <div class="stats"><div class="stat"><span>Registered Schools</span><strong>${d.registeredSchools}</strong></div><div class="stat"><span>Submitted Reports</span><strong>${d.submissions}</strong></div><div class="stat"><span>Division Average</span><strong>${average==null?"—":average.toFixed(2)+"%"}</strong></div><div class="stat"><span>Outstanding Schools</span><strong>${scores.filter(s=>s.percentage>=90).length}</strong></div></div>
-  <div class="stats operational-stats"><div class="stat"><span>Checklist Completion</span><strong>${completionRate==null?"—":completionRate.toFixed(1)+"%"}</strong><small>${answeredItems} of ${expectedItems} expected responses</small></div><div class="stat"><span>Recorded Emergencies</span><strong>${emergencyRecords.length}</strong><small>From each school's latest report</small></div><div class="stat"><span>HINGA / HINTO Activations</span><strong>${urgentActivations}</strong><small>May require closer division support</small></div><div class="stat"><span>Immediate TA Needed</span><strong>${scores.filter(s=>s.percentage<60).length}</strong><small>Schools rated below 60%</small></div></div>
+  <div class="stats operational-stats"><div class="stat"><span>Checklist Completion</span><strong>${completionRate==null?"—":completionRate.toFixed(1)+"%"}</strong><small>${answeredItems} of ${expectedItems} expected responses</small></div><div class="stat"><span>Recorded Emergencies</span><strong>${emergencyRecords.length}</strong><small>From each school's latest report</small></div><div class="stat"><span>HINGA / HINTO Activations</span><strong>${urgentActivations}</strong><small>May require closer division support</small></div><div class="stat"><span>Technical Assistance Actions</span><strong>${technicalAssistanceRecords.length}</strong><small>${technicalAssistanceRecords.filter(x=>x.taStatus==="Open").length} open • ${technicalAssistanceRecords.filter(x=>x.taStatus==="Ongoing").length} ongoing</small></div></div>
   <article class="card overall-card"><div class="overall-head"><div><div class="kicker">OVERALL DIVISION PERFORMANCE</div><h3>${esc(overallRating)}</h3><p>${scores.length} of ${d.registeredSchools} registered school${d.registeredSchools===1?"":"s"} evaluated using their latest submission.</p></div><div class="overall-score ${overallClass}">${average==null?"—":average.toFixed(2)+"%"}</div></div><div class="overall-progress"><span style="width:${average||0}%"></span></div><div class="band-grid">${bands.map(([label,count,tone])=>`<div class="band-item ${tone}"><strong>${count}</strong><span>${esc(label)}</span></div>`).join("")}</div>${bands[4][1]?`<div class="ta-alert"><strong>${bands[4][1]} school${bands[4][1]===1?"":"s"}</strong> currently need immediate technical assistance based on their latest rating.</div>`:""}</article>
   <div class="dashboard-two"><article class="card"><h3>Overall Rating Distribution</h3><div class="donut-layout"><div class="donut-chart" role="img" aria-label="Rating distribution for ${scores.length} evaluated schools" style="background:${donutBackground}"><div class="donut-center"><strong>${scores.length}</strong><span>Evaluated<br>Schools</span></div></div><div class="donut-legend">${bands.map(([label,count,,color])=>`<div><i style="background:${color}"></i><span>${esc(label)}</span><strong>${count} <small>(${scores.length?Math.round(count/scores.length*100):0}%)</small></strong></div>`).join("")}</div></div></article><article class="card"><h3>Activated Continuity Levels</h3><div class="continuity-summary">${continuityBands.map(([level,count])=>`<div class="continuity-count ${level.toLowerCase()}"><strong>${count}</strong><span>${level}</span></div>`).join("")}</div><h3 class="dashboard-subtitle">Emergency / Hazard Profile</h3>${topHazards.length?`<div class="hazard-list">${topHazards.map(([name,count])=>`<div><span>${esc(name)}</span><strong>${count}</strong></div>`).join("")}</div>`:`<p class="muted">No emergency records in the latest reports.</p>`}</article></div>
   <article class="card"><h3>Performance by Compliance Domain</h3><p class="muted">Aggregated from the latest school submission and excluding Not Applicable items.</p><div class="domain-performance">${domainPerformance.map(x=>`<div class="domain-performance-row"><span>${esc(x.domain)}</span><div class="domain-track"><i style="width:${x.percentage||0}%"></i></div><strong>${x.percentage==null?"—":x.percentage.toFixed(1)+"%"}</strong><small>${x.applicable} items</small></div>`).join("")}</div></article>
@@ -351,15 +374,15 @@ async function renderAnalytics(){
   const domainPerformance=[...new Set(indicators.map(x=>x.domain))].map(domain=>{const items=checklist.filter(x=>(x.domain||indicators.find(y=>y.text===x.indicator)?.domain)===domain),s=calculateScore(items);return{domain:domain.replace(/^[A-H]\. /,""),percentage:s.percentage,applicable:s.applicableItems}});
   const emergencies=latest.flatMap(r=>r.data?.emergencies||[]),hazards=Object.entries(emergencies.reduce((m,x)=>{const key=x.hazardType||"Not specified";m[key]=(m[key]||0)+1;return m},{})).sort((a,b)=>b[1]-a[1]);
   const continuity=latest.flatMap(r=>r.data?.continuityActivations?.length?r.data.continuityActivations:(r.data?.continuityLevel?[{level:r.data.continuityLevel}]:[])),levels=["HAYO","HINAY","HINGA","HINTO"].map(level=>[level,continuity.filter(x=>String(x.level||"").toUpperCase().startsWith(level)).length]);
-  const taStatuses=latest.reduce((m,r)=>{const key=r.data?.overallStatus||"Not specified";m[key]=(m[key]||0)+1;return m},{}),taRows=Object.entries(taStatuses).sort((a,b)=>b[1]-a[1]);
+  const taRecords=latest.flatMap(r=>r.data?.technicalAssistanceRecords?.length?r.data.technicalAssistanceRecords:(r.data?.overallStatus?[{taStatus:r.data.overallStatus}]:[])),taStatuses=taRecords.reduce((m,r)=>{const key=r.taStatus||"Not specified";m[key]=(m[key]||0)+1;return m},{}),taRows=Object.entries(taStatuses).sort((a,b)=>b[1]-a[1]);
   const max=Math.max(1,...d.byDistrict.map(x=>x.count));
   const bandMax=Math.max(1,...bands.map(x=>x[1]));
   qs("#analyticsPage").innerHTML=`<div class="page-title"><div><div class="kicker">ANALYTICS</div><h2>Reports & Analytics</h2><p>Division analysis based on each school's latest complete EIE M&E submission.</p></div></div>
-  <div class="stats"><div class="stat"><span>Evaluated Schools</span><strong>${latest.length}</strong><small>Latest submission per school</small></div><div class="stat"><span>Division Average</span><strong>${average==null?"—":average.toFixed(2)+"%"}</strong><small>${esc(ratingFor(average))}</small></div><div class="stat"><span>Emergency Records</span><strong>${emergencies.length}</strong><small>Documented in latest reports</small></div><div class="stat"><span>Immediate TA Needed</span><strong>${scores.filter(s=>s.percentage<60).length}</strong><small>Schools rated below 60%</small></div></div>
+  <div class="stats"><div class="stat"><span>Evaluated Schools</span><strong>${latest.length}</strong><small>Latest submission per school</small></div><div class="stat"><span>Division Average</span><strong>${average==null?"—":average.toFixed(2)+"%"}</strong><small>${esc(ratingFor(average))}</small></div><div class="stat"><span>Emergency Records</span><strong>${emergencies.length}</strong><small>Documented in latest reports</small></div><div class="stat"><span>TA Action Records</span><strong>${taRecords.length}</strong><small>${taRecords.filter(x=>x.taStatus==="Completed").length} completed</small></div></div>
   <div class="analytics-grid"><article class="card"><h3>Rating Distribution</h3>${scores.length?bands.map(x=>`<div class="bar-row"><span>${esc(x[0])}</span><div class="bar"><span style="width:${Math.round(x[1]/bandMax*100)}%"></span></div><strong>${x[1]}</strong></div>`).join(""):`<p class="muted">No scored submissions yet.</p>`}</article><article class="card"><h3>Checklist Response Mix</h3><div class="response-mix">${responseCounts.map(([label,count],i)=>`<div class="response-${i}"><strong>${count}</strong><span>${esc(label)}</span><small>${checklist.length?Math.round(count/checklist.length*100):0}%</small></div>`).join("")}</div></article></div>
   <article class="card"><h3>Performance by Compliance Domain</h3><p class="muted">Combined performance across domains A–H; Not Applicable responses are excluded.</p><div class="domain-performance">${domainPerformance.map(x=>`<div class="domain-performance-row"><span>${esc(x.domain)}</span><div class="domain-track"><i style="width:${x.percentage||0}%"></i></div><strong>${x.percentage==null?"—":x.percentage.toFixed(1)+"%"}</strong><small>${x.applicable} items</small></div>`).join("")}</div></article>
   <div class="analytics-grid"><article class="card"><h3>Activated Learning Continuity Levels</h3><div class="continuity-summary">${levels.map(([level,count])=>`<div class="continuity-count ${level.toLowerCase()}"><strong>${count}</strong><span>${level}</span></div>`).join("")}</div></article><article class="card"><h3>Emergency / Hazard Distribution</h3>${hazards.length?`<div class="hazard-list">${hazards.map(([name,count])=>`<div><span>${esc(name)}</span><strong>${count}</strong></div>`).join("")}</div>`:`<p class="muted">No emergency records available.</p>`}</article></div>
-  <div class="analytics-grid"><article class="card"><h3>Monitoring / Technical Assistance Status</h3>${taRows.length?`<div class="hazard-list">${taRows.map(([name,count])=>`<div><span>${esc(name)}</span><strong>${count}</strong></div>`).join("")}</div>`:`<p class="muted">No monitoring status data available.</p>`}</article><article class="card"><h3>Submissions by District</h3>${d.byDistrict.length?d.byDistrict.map(x=>`<div class="bar-row"><span>${esc(x.district)}</span><div class="bar"><span style="width:${Math.round(x.count/max*100)}%"></span></div><strong>${x.count}</strong></div>`).join(""):`<p class="muted">No submissions yet.</p>`}</article></div>
+  <div class="analytics-grid"><article class="card"><h3>Technical Assistance Action Status</h3>${taRows.length?`<div class="hazard-list">${taRows.map(([name,count])=>`<div><span>${esc(name)}</span><strong>${count}</strong></div>`).join("")}</div>`:`<p class="muted">No technical assistance records available.</p>`}</article><article class="card"><h3>Submissions by District</h3>${d.byDistrict.length?d.byDistrict.map(x=>`<div class="bar-row"><span>${esc(x.district)}</span><div class="bar"><span style="width:${Math.round(x.count/max*100)}%"></span></div><strong>${x.count}</strong></div>`).join(""):`<p class="muted">No submissions yet.</p>`}</article></div>
   <article class="card"><h3>Latest School Performance</h3>${renderSubmissionTable(latest,false)}</article>`;
 }
 async function renderMyReports(){

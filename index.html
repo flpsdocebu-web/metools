@@ -230,37 +230,49 @@
             </article>
 
             <article class="card">
-              <h3>Part V. Key Findings and Technical Assistance</h3>
+              <h3>Part V. Summary of Technical Assistance</h3>
+              <p class="muted">Record each agreed technical assistance action separately, including its cause, owner, status, and follow-up evidence.</p>
               <div class="grid two">
-                <label>Strengths / Good Practices<textarea name="strengths" rows="5"></textarea></label>
-                <label>Gaps / Issues / Concerns<textarea name="gaps" rows="5"></textarea></label>
-                <label>Technical Assistance Provided<textarea name="technicalAssistance" rows="5"></textarea></label>
-                <label>Agreed Next Steps / Action Points<textarea name="nextSteps" rows="5"></textarea></label>
+                <label>Issue / Gap<textarea name="taIssue" rows="4"></textarea></label>
+                <label>Root Cause<textarea name="taRootCause" rows="4"></textarea></label>
+                <label>Technical Assistance Provided / Agreed<textarea name="taProvided" rows="4"></textarea></label>
+                <label>Follow-up / Evidence<textarea name="taFollowUp" rows="4"></textarea></label>
               </div>
               <div class="grid three">
-                <label>Responsible Person<input name="responsiblePerson"></label>
-                <label>Target Completion Date<input name="targetDate" type="date"></label>
-                <label>Monitoring Status
-                  <select name="overallStatus">
+                <label>Responsible Person / Office<input name="taResponsible"></label>
+                <label>Timeline<input name="taTimeline" type="date"></label>
+                <label>Status
+                  <select name="taStatus">
                     <option value="">Select...</option>
-                    <option>Compliant / Fully Implemented</option>
-                    <option>Partially Compliant / Ongoing</option>
-                    <option>Needs Technical Assistance</option>
-                    <option>For Immediate Action</option>
+                    <option>Open</option>
+                    <option>Ongoing</option>
+                    <option>Completed</option>
                   </select>
                 </label>
               </div>
+              <div class="section-actions"><button id="saveTA" class="btn primary" type="button">Save Technical Assistance</button><button id="addTA" class="btn secondary" type="button" disabled>Add Another Entry</button></div>
+              <div id="taRecords" class="record-container"><p class="muted">No technical assistance records saved yet.</p></div>
             </article>
 
             <article class="card">
-              <h3>Part VI. Monitoring Team / Certification</h3>
+              <h3>Part VI. Overall Findings and Recommendations</h3>
+              <div class="grid two">
+                <label>Strengths / Good Practices<textarea name="strengths" rows="5"></textarea></label>
+                <label>Priority Gaps / Risks Requiring Action<textarea name="gaps" rows="5"></textarea></label>
+                <label>Recommendations / Agreed Next Steps<textarea name="nextSteps" rows="5"></textarea></label>
+                <label>Support Required from District / SDO / Partners<textarea name="supportRequired" rows="5"></textarea></label>
+              </div>
+              <label>Additional Remarks<textarea name="additionalRemarks" rows="4"></textarea></label>
+            </article>
+
+            <article class="card">
+              <h3>Part VII. Monitoring Team / Certification</h3>
               <div class="grid two">
                 <label>Monitored by<input name="monitoredBy"></label>
                 <label>Designation / Office<input name="monitorDesignation"></label>
                 <label>Validated / Acknowledged by<input name="validatedBy"></label>
                 <label>Designation<input name="validatedDesignation"></label>
               </div>
-              <label>Additional Remarks<textarea name="additionalRemarks" rows="4"></textarea></label>
             </article>
           </form>
         </section>
