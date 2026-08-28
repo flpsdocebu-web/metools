@@ -140,8 +140,10 @@ function serializeForm(){
 }
 function fillForm(data){
   if(!data)return;
+  const legacyLevels={"Level 0 - Normal Operations":"HAYO (Continue)","Level 1 - Preparedness / Alert":"HINAY (Ease-in)","Level 2 - Alternative Learning Delivery":"HINGA (Check-in)","Level 3 - Full Emergency Response":"HINTO (Stop)"};
+  if(legacyLevels[data.continuityLevel])data={...data,continuityLevel:legacyLevels[data.continuityLevel]};
   state.emergencyRecords=Array.isArray(data.emergencies)?data.emergencies:[];
-  state.continuityRecords=Array.isArray(data.continuityActivations)?data.continuityActivations:[];
+  state.continuityRecords=Array.isArray(data.continuityActivations)?data.continuityActivations.map(x=>({...x,level:legacyLevels[x.level]||x.level})):[];
   for(const [k,v] of Object.entries(data)){
     if(k==="checklist"||v==null||typeof v==="object")continue;
     const el=qs("#meForm").elements.namedItem(k);if(!el)continue;
