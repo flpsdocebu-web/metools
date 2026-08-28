@@ -73,7 +73,7 @@ function buildChecklist(){
   indicators.forEach((x,i)=>tb.insertAdjacentHTML("beforeend",`<tr><td>${i+1}</td><td>${x}</td><td><select name="indicator_${i}_status"><option value="">Select...</option><option>Compliant</option><option>Partially Compliant</option><option>Not Compliant</option><option>Not Applicable</option></select></td><td><textarea rows="2" name="indicator_${i}_remarks"></textarea></td></tr>`));
   qsa("#checklistTable select").forEach(x=>x.addEventListener("change",updateLiveScore));configureRequiredFields();updateLiveScore();
 }
-const emergencyFieldNames=["hazardType","emergencyDate","affectedLearners","affectedPersonnel","situationDescription"];
+const emergencyFieldNames=["hazardType","emergencyDate","affectedArea","levelActivatedAt","affectedLearners","affectedPersonnel","decisionMaker","reportedAt","reviewDate","situationDescription","assessmentSources","activatedResources","communicationChannels"];
 const continuityFieldNames=["continuityLevel","learningArrangement","continuityActivationDate","continuityDuration","continuityResponsible","continuityStatus","continuityNotes"];
 function configureRequiredFields(){
   const form=qs("#meForm");if(!form)return;
@@ -93,6 +93,7 @@ function validateNamedFields(names,message){
 }
 function validateReportForSubmission(){
   if(!(state.emergencyRecords||[]).length){toast("Save at least one complete Emergency / Hazard record before submitting.");qs("#saveEmergency")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
+  if(state.emergencyRecords.some(record=>emergencyFieldNames.some(name=>String(record[name]??"").trim()===""))){toast("Every saved Emergency / Hazard record must contain all required activation details.");qs("#emergencyRecords")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
   if(!(state.continuityRecords||[]).length){toast("Save at least one complete Learning Continuity activation before submitting.");qs("#saveContinuity")?.scrollIntoView({behavior:"smooth",block:"center"});return false}
   const form=qs("#meForm");if(!form.reportValidity()){toast("Please complete every required field marked with an asterisk.");return false}
   return true;
@@ -160,12 +161,12 @@ function formValue(name){return qs("#meForm").elements.namedItem(name)?.value||"
 function clearFields(names){names.forEach(name=>{const el=qs("#meForm").elements.namedItem(name);if(!el)return;if(el instanceof RadioNodeList)[...el].forEach(x=>x.checked=false);else el.value=""})}
 function renderEmergencyRecords(){
   const box=qs("#emergencyRecords");if(!box)return;const rows=state.emergencyRecords||[];
-  box.innerHTML=rows.length?rows.map((r,i)=>`<div class="saved-record"><div><span class="record-number">Emergency ${i+1}</span><strong>${esc(r.hazardType)}</strong><small>${esc(r.emergencyDate||"Date not specified")} • ${esc(r.affectedLearners||0)} learner(s) • ${esc(r.affectedPersonnel||0)} personnel</small><p>${esc(r.situationDescription||"No situation description.")}</p></div><button class="btn red remove-emergency" data-index="${i}" type="button">Remove</button></div>`).join(""):`<p class="muted">No emergency records saved yet.</p>`;
+  box.innerHTML=rows.length?rows.map((r,i)=>`<div class="saved-record"><div><span class="record-number">Emergency ${i+1}</span><strong>${esc(r.hazardType)} — ${esc(r.affectedArea)}</strong><small>${esc(r.emergencyDate||"Date not specified")} • ${esc(r.affectedLearners||0)} learner(s) • ${esc(r.affectedPersonnel||0)} personnel</small><p>${esc(r.situationDescription||"No situation description.")}</p><small><b>Approved by:</b> ${esc(r.decisionMaker||"—")} &nbsp; • &nbsp; <b>Review:</b> ${esc(r.reviewDate||"—")}</small></div><button class="btn red remove-emergency" data-index="${i}" type="button">Remove</button></div>`).join(""):`<p class="muted">No emergency records saved yet.</p>`;
   qsa(".remove-emergency").forEach(b=>b.onclick=()=>{state.emergencyRecords.splice(Number(b.dataset.index),1);renderEmergencyRecords();toast("Emergency record removed.")});
 }
 function saveEmergencyRecord(){
   if(!validateNamedFields(emergencyFieldNames,"Please complete all required Emergency / Hazard fields."))return;
-  const record={hazardType:formValue("hazardType"),emergencyDate:formValue("emergencyDate"),affectedLearners:formValue("affectedLearners"),affectedPersonnel:formValue("affectedPersonnel"),situationDescription:formValue("situationDescription"),savedAt:new Date().toISOString()};
+  const record=Object.fromEntries(emergencyFieldNames.map(name=>[name,formValue(name)]));record.savedAt=new Date().toISOString();
   state.emergencyRecords.push(record);renderEmergencyRecords();qs("#addEmergency").disabled=false;toast("Emergency record saved.");
 }
 function renderContinuityRecords(){
@@ -179,7 +180,7 @@ function saveContinuityRecord(){
   state.continuityRecords.push(record);renderContinuityRecords();qs("#addContinuity").disabled=false;toast("Continuity-level record saved.");
 }
 qs("#saveEmergency").onclick=saveEmergencyRecord;
-qs("#addEmergency").onclick=()=>{clearFields(["hazardType","emergencyDate","affectedLearners","affectedPersonnel","situationDescription"]);qs("#addEmergency").disabled=true;toast("Ready for another emergency record.")};
+qs("#addEmergency").onclick=()=>{clearFields(emergencyFieldNames);qs("#addEmergency").disabled=true;toast("Ready for another emergency record.")};
 qs("#saveContinuity").onclick=saveContinuityRecord;
 qs("#addContinuity").onclick=()=>{clearFields(["continuityLevel","learningArrangement","continuityActivationDate","continuityDuration","continuityResponsible","continuityStatus","continuityNotes"]);qs("#addContinuity").disabled=true;toast("Ready for another continuity activation.")};
 async function loadDraft(){
@@ -210,7 +211,7 @@ function printCell(label,value){return`<tr><th>${esc(label)}</th><td>${esc(value
 function buildPrintReport(){
   const d=serializeForm(),score=d.score||calculateScore(d.checklist),short={"Compliant":"C","Partially Compliant":"PC","Not Compliant":"NC","Not Applicable":"NA"};
   const counts={C:0,PC:0,NC:0,NA:0};(d.checklist||[]).forEach(x=>{if(short[x.status])counts[short[x.status]]++});
-  const emergencies=(d.emergencies?.length?d.emergencies:[{hazardType:d.hazardType,emergencyDate:d.emergencyDate,affectedLearners:d.affectedLearners,affectedPersonnel:d.affectedPersonnel,situationDescription:d.situationDescription}]).filter(x=>x.hazardType||x.emergencyDate||x.situationDescription);
+  const emergencies=(d.emergencies?.length?d.emergencies:[Object.fromEntries(emergencyFieldNames.map(name=>[name,d[name]]))]).filter(x=>x.hazardType||x.emergencyDate||x.situationDescription);
   const activations=(d.continuityActivations?.length?d.continuityActivations:[{level:d.continuityLevel,arrangement:d.learningArrangement,activationDate:d.continuityActivationDate,duration:d.continuityDuration,responsible:d.continuityResponsible,status:d.continuityStatus,notes:d.continuityNotes}]).filter(x=>x.level||x.arrangement);
   const checkRows=(d.checklist||[]).map((x,i)=>`<tr><td class="center">${i+1}</td><td>${esc(x.indicator)}</td><td class="center mark">${x.status==="Compliant"?"✓":""}</td><td class="center mark">${x.status==="Partially Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Applicable"?"✓":""}</td><td>${esc(x.remarks||"")}</td><td></td><td></td></tr>`).join("");
   qs("#printReport").innerHTML=`
@@ -222,11 +223,12 @@ function buildPrintReport(){
     </div>
     <div class="print-sheet">
       <h2 class="section-title">1. School Profile</h2>
-      <table class="form-table">${printCell("Region / SDO / District",[d.region,d.division,d.district].filter(Boolean).join(" / "))}${printCell("School Name / School ID",[d.schoolName,d.schoolId].filter(Boolean).join(" / "))}${printCell("School Year",d.schoolYear)}${printCell("School Head / Designation",[d.schoolHead,d.designation].filter(Boolean).join(" / "))}${printCell("Monitoring Date",printDate(d.monitoringDate))}${printCell("Emergency / hazard and affected area",emergencies.map(x=>x.hazardType).join("; "))}${printCell("Learners / personnel affected",emergencies.map(x=>`${x.affectedLearners||0} learners / ${x.affectedPersonnel||0} personnel`).join("; "))}</table>
+      <table class="form-table">${printCell("Region / SDO / District",[d.region,d.division,d.district].filter(Boolean).join(" / "))}${printCell("School Name / School ID",[d.schoolName,d.schoolId].filter(Boolean).join(" / "))}${printCell("School Year",d.schoolYear)}${printCell("School Head / Designation",[d.schoolHead,d.designation].filter(Boolean).join(" / "))}${printCell("Monitoring Date",printDate(d.monitoringDate))}${printCell("Emergency / hazard and affected area",emergencies.map(x=>[x.hazardType,x.affectedArea].filter(Boolean).join(" — ")).join("; "))}${printCell("Learners / personnel affected",emergencies.map(x=>`${x.affectedLearners||0} learners / ${x.affectedPersonnel||0} personnel`).join("; "))}</table>
       <h2 class="section-title">2. Activated Learning Continuity Level</h2>
       <table class="report-grid"><thead><tr><th>Selected Level</th><th>Learning Delivery Arrangement</th><th>Date Activated</th><th>Status / Duration</th><th>Basis / Local Evidence</th></tr></thead><tbody>${activations.length?activations.map(x=>`<tr><td>${esc(x.level||"")}</td><td>${esc(x.arrangement||"")}</td><td>${esc(printDate(x.activationDate))}</td><td>${esc([x.status,x.duration].filter(Boolean).join(" / "))}</td><td>${esc(x.notes||"")}</td></tr>`).join(""):`<tr><td colspan="5" class="blank-row"></td></tr>`}</tbody></table>
       <h3 class="sub-title">Emergency / Hazard Record</h3>
       <table class="report-grid"><thead><tr><th>Emergency / Hazard</th><th>Date Occurred</th><th>Affected Learners</th><th>Affected Personnel</th><th>Situation Description</th></tr></thead><tbody>${emergencies.length?emergencies.map(x=>`<tr><td>${esc(x.hazardType||"")}</td><td>${esc(printDate(x.emergencyDate))}</td><td class="center">${esc(x.affectedLearners||"0")}</td><td class="center">${esc(x.affectedPersonnel||"0")}</td><td>${esc(x.situationDescription||"")}</td></tr>`).join(""):`<tr><td colspan="5" class="blank-row"></td></tr>`}</tbody></table>
+      ${emergencies.map((x,i)=>`<h3 class="sub-title">Emergency ${i+1} — Activation Details</h3><table class="form-table emergency-print-details">${printCell("Emergency / hazard and affected area",[x.hazardType,x.affectedArea].filter(Boolean).join(" — "))}${printCell("Date and time level activated",x.levelActivatedAt?new Date(x.levelActivatedAt).toLocaleString("en-PH"):"")}${printCell("Decision maker / approving authority",x.decisionMaker)}${printCell("Assessment sources used",x.assessmentSources)}${printCell("Learners / personnel affected",`${x.affectedLearners||0} learners / ${x.affectedPersonnel||0} personnel`)}${printCell("Learning experiences/resources activated",x.activatedResources)}${printCell("Communication channels used",x.communicationChannels)}${printCell("Date/time reported to EiE dashboard / SDO",x.reportedAt?new Date(x.reportedAt).toLocaleString("en-PH"):"")}${printCell("Planned review / transition date",printDate(x.reviewDate))}</table>`).join("")}
     </div>
     <div class="print-sheet print-landscape">
       <h2 class="section-title">3. Compliance and Implementation Checklist</h2>

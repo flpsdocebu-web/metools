@@ -150,10 +150,20 @@
                   </select>
                 </label>
                 <label>Date Emergency Occurred<input name="emergencyDate" type="date"></label>
+                <label>Affected Area<input name="affectedArea" placeholder="Barangay, sitio, campus, or affected school area"></label>
+                <label>Date and Time Level Activated<input name="levelActivatedAt" type="datetime-local"></label>
                 <label>Affected Learners<input name="affectedLearners" type="number" min="0"></label>
                 <label>Affected Personnel<input name="affectedPersonnel" type="number" min="0"></label>
+                <label>Decision Maker / Approving Authority<input name="decisionMaker"></label>
+                <label>Date/Time Reported to EiE Dashboard / SDO<input name="reportedAt" type="datetime-local"></label>
+                <label>Planned Review / Transition Date<input name="reviewDate" type="date"></label>
               </div>
               <label>Brief Situation Description<textarea name="situationDescription" rows="4"></textarea></label>
+              <div class="grid two">
+                <label>Assessment Sources Used<textarea name="assessmentSources" rows="3" placeholder="Rapid assessment, DRRM report, inspection, learner tracking, etc."></textarea></label>
+                <label>Learning Experiences / Resources Activated<textarea name="activatedResources" rows="3"></textarea></label>
+              </div>
+              <label>Communication Channels Used<textarea name="communicationChannels" rows="3" placeholder="SMS, calls, group chat, radio, school page, barangay announcement, etc."></textarea></label>
               <div class="section-actions"><button class="btn primary" id="saveEmergency" type="button">Save Emergency</button><button class="btn secondary" id="addEmergency" type="button" disabled>Add Another Emergency</button></div>
               <div id="emergencyRecords" class="record-container"><p class="muted">No emergency records saved yet.</p></div>
             </article>
