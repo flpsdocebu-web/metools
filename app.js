@@ -1,28 +1,61 @@
 
 const API="/api";
 const indicators=[
-"School has an updated Learning and Service Continuity Plan (LSCP) accessible to personnel.",
-"School personnel are oriented on roles and responsibilities during emergencies.",
-"Learner and personnel contact information / communication tree is updated.",
-"Rapid assessment of affected learners, personnel, facilities, and learning resources is conducted.",
-"Appropriate learning continuity level or alternative delivery arrangement is activated.",
-"Learning materials and alternative learning resources are available and distributed as needed.",
-"Strategies are in place for learners with limited connectivity, disability, displacement, or other barriers.",
-"Learner attendance, participation, and access to learning are monitored during the emergency.",
-"Health, safety, child protection, and psychosocial support measures are integrated in implementation.",
-"Teachers receive instructional guidance, coaching, or technical assistance for emergency learning delivery.",
-"Parents, LGUs, community partners, and other stakeholders are engaged when appropriate.",
-"Data privacy and appropriate handling of learner and personnel information are observed.",
-"Implementation issues and service gaps are documented and acted upon.",
-"School recovery and transition-to-normalcy measures are identified and implemented.",
-"Monitoring results are used to improve the LSCP and future emergency preparedness."
+{domain:"A. Governance and LSCP Management",text:"An updated LSCP is developed annually before the opening of classes and reviewed/updated every term."},
+{domain:"A. Governance and LSCP Management",text:"The LSCP was developed collaboratively with teaching and non-teaching personnel, learners, parents/guardians, and relevant community representatives."},
+{domain:"A. Governance and LSCP Management",text:"Roles, decision authority, succession arrangements, and coordination mechanisms for emergency learning continuity are defined."},
+{domain:"A. Governance and LSCP Management",text:"Capability-mapping data on learners, teachers, connectivity, devices, accessibility, and home-learning support informed the LSCP."},
+{domain:"A. Governance and LSCP Management",text:"School-based CLC/ALS arrangements are reflected in the school LSCP and AIP, where applicable."},
+{domain:"A. Governance and LSCP Management",text:"Risks, locally relevant hazards, vulnerable groups, and access barriers are identified and linked to actions and resources."},
+{domain:"B. Teaching-Learning Continuity",text:"Learning experiences are identified for each key stage and each continuity level (Hayo, Hinay, Hinga, Hinto)."},
+{domain:"B. Teaching-Learning Continuity",text:"Planned learning experiences are feasible for learner circumstances and include suitable online, digital, broadcast, print, or offline options."},
+{domain:"B. Teaching-Learning Continuity",text:"Learning resources are quality-assured, accessible, inclusive, age-appropriate, and aligned with learning design principles."},
+{domain:"B. Teaching-Learning Continuity",text:"Teachers understand which learning experiences and resources to use at each activated level."},
+{domain:"B. Teaching-Learning Continuity",text:"HINGA implementation reduces academic demands and prioritizes well-being checks, review, trauma-informed resources, and low-stakes assessment."},
+{domain:"B. Teaching-Learning Continuity",text:"HINTO implementation halts academic learning and prioritizes safety, basic needs, and status monitoring."},
+{domain:"B. Teaching-Learning Continuity",text:"Transition to HAYO is safe and gradual, with structured remediation and foundational skill recovery after disruption."},
+{domain:"B. Teaching-Learning Continuity",text:"Alternative/flexible arrangements are planned for prolonged Hinga or Hinto conditions and lost instructional time."},
+{domain:"C. Learner Support and Inclusion",text:"Learner status, safety, displacement, accessibility, and participation are tracked using privacy-conscious records."},
+{domain:"C. Learner Support and Inclusion",text:"Provisions address learners with disabilities, indigenous learners, geographically isolated learners, ALS learners, and other at-risk groups."},
+{domain:"C. Learner Support and Inclusion",text:"Parents/guardians receive orientation on the LSCP, activated level, learning support roles, and available assistance."},
+{domain:"C. Learner Support and Inclusion",text:"Family Kits, check-in guides, MHPSS/trauma-informed supports, or referral pathways are available as appropriate."},
+{domain:"C. Learner Support and Inclusion",text:"Non-participating or unreachable learners are followed up through documented, safe, and reasonable procedures."},
+{domain:"C. Learner Support and Inclusion",text:"Feedback and formative assessment practices are appropriate to the activated level and do not increase distress."},
+{domain:"D. Personnel Preparedness and Welfare",text:"Teaching and non-teaching personnel are oriented on the LSCP, emergency roles, call tree, and reporting procedures."},
+{domain:"D. Personnel Preparedness and Welfare",text:"Teachers/ALS implementers are capacitated for level-appropriate learning delivery, MHPSS-sensitive practice, and inclusive support."},
+{domain:"D. Personnel Preparedness and Welfare",text:"Personnel safety and fitness to return are assessed before resumption of duties or in-person learning."},
+{domain:"D. Personnel Preparedness and Welfare",text:"Continuity/relief staffing and workload arrangements are available when personnel cannot immediately return."},
+{domain:"D. Personnel Preparedness and Welfare",text:"Personnel well-being, MHPSS needs, and referral/support mechanisms are monitored and addressed."},
+{domain:"E. Communication and Coordination",text:"An updated emergency call tree is included in the LSCP and can be automatically activated."},
+{domain:"E. Communication and Coordination",text:"Personnel first report their safety status; advisers/assigned teachers check the status of learners through parents/guardians."},
+{domain:"E. Communication and Coordination",text:"Level activation, learning arrangements, schedules, and changes are communicated promptly through redundant channels."},
+{domain:"E. Communication and Coordination",text:"Coordination with the SDO, LGU, DRRM bodies, health/safety authorities, and partners is documented."},
+{domain:"E. Communication and Coordination",text:"Communication is accessible, child-sensitive, privacy-conscious, and available in locally appropriate languages/formats."},
+{domain:"E. Communication and Coordination",text:"Required information is submitted through the EiE Learning Continuity dashboard or prescribed reporting mechanism."},
+{domain:"F. Safety, Protection, and Well-being",text:"Situation assessment covers hazard type, safety/security, physical and psychosocial condition, resource availability, and extent of disruption."},
+{domain:"F. Safety, Protection, and Well-being",text:"In-person classes resume only after affected facilities/infrastructure are declared safe by authorized inspectors when required."},
+{domain:"F. Safety, Protection, and Well-being",text:"Child protection, safeguarding, referral, evacuation, reunification, and MHPSS protocols are integrated or cross-referenced."},
+{domain:"F. Safety, Protection, and Well-being",text:"Learning modalities and material distribution do not expose learners, families, or personnel to avoidable risk."},
+{domain:"F. Safety, Protection, and Well-being",text:"Emergency drills/orientations and safe access, distribution, and retrieval procedures are documented."},
+{domain:"F. Safety, Protection, and Well-being",text:"The activated level and response are reviewed as conditions change, with safety and well-being as primary considerations."},
+{domain:"G. Resource and Logistics Management",text:"A proportional supply of identified learning resources and emergency learning kits is available, pre-positioned, or has a replenishment plan."},
+{domain:"G. Resource and Logistics Management",text:"Inventory, secure storage, distribution, retrieval, safeguarding, and accountability procedures cover DepEd and donated devices/resources."},
+{domain:"G. Resource and Logistics Management",text:"Resource needs and LSCP actions are reflected in the AIP/budget, including reasonable communication support where allowable."},
+{domain:"G. Resource and Logistics Management",text:"Distribution/access arrangements identify responsible persons, locations, timelines, and accommodations for vulnerable learners."},
+{domain:"G. Resource and Logistics Management",text:"Partnerships and donations are coordinated, documented, and aligned with identified needs and applicable rules."},
+{domain:"H. Monitoring, Reporting, and Improvement",text:"Activation decisions, dates, evidence, affected populations, delivery arrangements, and transitions are documented."},
+{domain:"H. Monitoring, Reporting, and Improvement",text:"Implementation data cover reach/participation, resource access, learner and personnel well-being, incidents, and emerging gaps."},
+{domain:"H. Monitoring, Reporting, and Improvement",text:"School records are reconciled with required SDO/EiE dashboard reports and submitted within prescribed timelines."},
+{domain:"H. Monitoring, Reporting, and Improvement",text:"Feedback from learners, parents, teachers, and partners is collected and used to adjust implementation."},
+{domain:"H. Monitoring, Reporting, and Improvement",text:"After-action review identifies lessons, effective practices, unresolved risks, and actions for LSCP improvement."},
+{domain:"H. Monitoring, Reporting, and Improvement",text:"Technical assistance needs, responsible persons, timelines, and follow-through status are documented and monitored."}
 ];
 let state={token:null,user:null,emergencyRecords:[],continuityRecords:[]};
 const scoreValues={"Compliant":3,"Partially Compliant":2,"Not Compliant":1};
 function ratingFor(p){if(p==null)return"Not yet rated";if(p>=90)return"Outstanding";if(p>=80)return"Very Satisfactory";if(p>=70)return"Satisfactory";if(p>=60)return"Needs Improvement";return"Needs Immediate Technical Assistance"}
 function calculateScore(items){const a=(items||[]).filter(x=>Object.hasOwn(scoreValues,x.status));const earned=a.reduce((n,x)=>n+scoreValues[x.status],0),maximum=a.length*3,percentage=maximum?Math.round(earned/maximum*10000)/100:null;return{earnedPoints:earned,maximumPoints:maximum,applicableItems:a.length,percentage,rating:ratingFor(percentage)}}
 function scoreOfReport(r){const s=r.score||r.data?.score;return s&&s.percentage!=null?s:calculateScore(r.data?.checklist||r.checklist||[])}
-function serializeChecklist(){return indicators.map((indicator,i)=>({indicator,status:qs("#meForm")?.elements.namedItem(`indicator_${i}_status`)?.value||""}))}
+function serializeChecklist(){return indicators.map((item,i)=>({indicator:item.text,domain:item.domain,status:qs("#meForm")?.elements.namedItem(`indicator_${i}_status`)?.value||""}))}
 function updateLiveScore(){const box=qs("#liveScore");if(!box)return;const s=calculateScore(serializeChecklist());box.textContent=s.percentage==null?"—":`${s.percentage.toFixed(2)}%`;qs("#livePoints").textContent=s.maximumPoints?`${s.earnedPoints} of ${s.maximumPoints} points • ${s.applicableItems} applicable item${s.applicableItems===1?"":"s"}`:"Not Applicable items are excluded from scoring.";const p=qs("#liveRating");p.textContent=s.rating;p.className=`rating-pill ${s.percentage==null?"neutral":s.percentage>=80?"high":s.percentage>=60?"mid":"low"}`}
 
 function qs(s){return document.querySelector(s)}
@@ -70,7 +103,7 @@ qs("#logoutBtn").addEventListener("click",()=>{sessionStorage.removeItem("eieTok
 
 function buildChecklist(){
   const tb=qs("#checklistTable tbody");tb.innerHTML="";
-  indicators.forEach((x,i)=>tb.insertAdjacentHTML("beforeend",`<tr><td>${i+1}</td><td>${x}</td><td><select name="indicator_${i}_status"><option value="">Select...</option><option>Compliant</option><option>Partially Compliant</option><option>Not Compliant</option><option>Not Applicable</option></select></td><td><textarea rows="2" name="indicator_${i}_remarks"></textarea></td></tr>`));
+  let domain="";indicators.forEach((x,i)=>{if(x.domain!==domain){domain=x.domain;tb.insertAdjacentHTML("beforeend",`<tr class="checklist-domain"><th colspan="6">${esc(domain)}</th></tr>`)}tb.insertAdjacentHTML("beforeend",`<tr><td>${i+1}</td><td>${esc(x.text)}</td><td><select name="indicator_${i}_status"><option value="">Select...</option><option>Compliant</option><option>Partially Compliant</option><option>Not Compliant</option><option>Not Applicable</option></select></td><td><textarea rows="2" name="indicator_${i}_mov"></textarea></td><td><textarea rows="2" name="indicator_${i}_findings"></textarea></td><td><textarea rows="2" name="indicator_${i}_action"></textarea></td></tr>`)});
   qsa("#checklistTable select").forEach(x=>x.addEventListener("change",updateLiveScore));configureRequiredFields();updateLiveScore();
 }
 const emergencyFieldNames=["hazardType","emergencyDate","affectedArea","levelActivatedAt","affectedLearners","affectedPersonnel","decisionMaker","reportedAt","reviewDate","situationDescription","assessmentSources","activatedResources","communicationChannels"];
@@ -136,7 +169,7 @@ function fillSchoolProfile(){
 }
 function serializeForm(){
   const d=Object.fromEntries(new FormData(qs("#meForm")).entries());
-  d.checklist=indicators.map((indicator,i)=>({indicator,status:d[`indicator_${i}_status`]||"",remarks:d[`indicator_${i}_remarks`]||""}));
+  d.checklist=indicators.map((item,i)=>({indicator:item.text,domain:item.domain,status:d[`indicator_${i}_status`]||"",mov:d[`indicator_${i}_mov`]||"",findings:d[`indicator_${i}_findings`]||"",action:d[`indicator_${i}_action`]||""}));
   d.emergencies=state.emergencyRecords||[];
   d.continuityActivations=state.continuityRecords||[];
   d.score=calculateScore(d.checklist);
@@ -153,9 +186,10 @@ function fillForm(data){
     const el=qs("#meForm").elements.namedItem(k);if(!el)continue;
     if(el instanceof RadioNodeList){[...el].forEach(x=>x.checked=x.value===v)} else el.value=v;
   }
-  if(Array.isArray(data.checklist)) data.checklist.forEach((x,i)=>{
-    const s=qs("#meForm").elements.namedItem(`indicator_${i}_status`),r=qs("#meForm").elements.namedItem(`indicator_${i}_remarks`);
-    if(s)s.value=x.status||"";if(r)r.value=x.remarks||"";
+  if(Array.isArray(data.checklist)) indicators.forEach((item,i)=>{
+    const x=data.checklist.find(saved=>saved.indicator===item.text)||(data.checklist.length===indicators.length?data.checklist[i]:null);if(!x)return;
+    const fields={status:x.status||"",mov:x.mov||x.remarks||"",findings:x.findings||"",action:x.action||""};
+    Object.entries(fields).forEach(([key,value])=>{const el=qs("#meForm").elements.namedItem(`indicator_${i}_${key}`);if(el)el.value=value});
   });
   renderEmergencyRecords();renderContinuityRecords();
   updateEnrollmentTotal();
@@ -217,7 +251,7 @@ function buildPrintReport(){
   const counts={C:0,PC:0,NC:0,NA:0};(d.checklist||[]).forEach(x=>{if(short[x.status])counts[short[x.status]]++});
   const emergencies=(d.emergencies?.length?d.emergencies:[Object.fromEntries(emergencyFieldNames.map(name=>[name,d[name]]))]).filter(x=>x.hazardType||x.emergencyDate||x.situationDescription);
   const activations=(d.continuityActivations?.length?d.continuityActivations:[{level:d.continuityLevel,arrangement:d.learningArrangement,activationDate:d.continuityActivationDate,duration:d.continuityDuration,responsible:d.continuityResponsible,status:d.continuityStatus,notes:d.continuityNotes}]).filter(x=>x.level||x.arrangement);
-  const checkRows=(d.checklist||[]).map((x,i)=>`<tr><td class="center">${i+1}</td><td>${esc(x.indicator)}</td><td class="center mark">${x.status==="Compliant"?"✓":""}</td><td class="center mark">${x.status==="Partially Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Applicable"?"✓":""}</td><td>${esc(x.remarks||"")}</td><td></td><td></td></tr>`).join("");
+  let printedDomain="";const checkRows=(d.checklist||[]).map((x,i)=>{const domain=x.domain||indicators[i]?.domain||"";const heading=domain!==printedDomain?`<tr class="print-domain"><th colspan="9">${esc(domain)}</th></tr>`:"";printedDomain=domain;return`${heading}<tr><td class="center">${i+1}</td><td>${esc(x.indicator)}</td><td class="center mark">${x.status==="Compliant"?"✓":""}</td><td class="center mark">${x.status==="Partially Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Compliant"?"✓":""}</td><td class="center mark">${x.status==="Not Applicable"?"✓":""}</td><td>${esc(x.mov||x.remarks||"")}</td><td>${esc(x.findings||"")}</td><td>${esc(x.action||"")}</td></tr>`}).join("");
   qs("#printReport").innerHTML=`
     <div class="print-sheet print-cover">
       <header class="report-header"><img src="/assets/cebu-province-logo.png" alt=""><div><div>REPUBLIC OF THE PHILIPPINES</div><strong>DEPARTMENT OF EDUCATION</strong><small>SCHOOLS DIVISION OF CEBU PROVINCE</small></div></header>
@@ -236,7 +270,7 @@ function buildPrintReport(){
     </div>
     <div class="print-sheet print-landscape">
       <h2 class="section-title">3. Compliance and Implementation Checklist</h2>
-      <p class="guide"><b>Rating guide:</b> C = Compliant; PC = Partially Compliant; NC = Not Compliant; NA = Not Applicable. One rating is marked per indicator. NA is excluded from automatic scoring.</p>
+      <p class="guide"><b>Rating guide:</b> C = Compliant; PC = Partially Compliant; NC = Not Compliant; NA = Not Applicable. Mark one rating per indicator and cite specific means of verification (MOV). NA is excluded from automatic scoring.</p>
       <table class="report-grid checklist-print"><thead><tr><th>No.</th><th>Indicator</th><th>C</th><th>PC</th><th>NC</th><th>NA</th><th>Means of Verification / Remarks</th><th>Findings / Gaps</th><th>Action Needed</th></tr></thead><tbody>${checkRows}</tbody></table>
     </div>
     <div class="print-sheet">
