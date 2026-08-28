@@ -40,6 +40,7 @@ async function getUsers(){return await blobStore().get("users",{type:"json"})||[
 async function setUsers(users){await blobStore().setJSON("users",users)}
 async function getSubIndex(){return await blobStore().get("submission-index",{type:"json"})||[]}
 async function setSubIndex(x){await blobStore().setJSON("submission-index",x)}
+async function enrichSubmissions(rows){return await Promise.all(rows.map(async item=>{if(item.data)return item;const report=await blobStore().get(`report-${item.id}`,{type:"json"});return report?{...item,data:report.data,score:report.data?.score}:item}))}
 
 async function ensureAdmin(){
   const users=await getUsers();
@@ -94,11 +95,11 @@ export default async (req,context)=>{
     if(path==="/submit"&&req.method==="POST"){
       const u=await auth(req);if(u.role==="admin")return json({error:"Administrator cannot submit a school report."},400);
       const b=await req.json();const id=crypto.randomUUID();const report={id,userId:u.id,username:u.username,district:u.district,schoolName:u.schoolName,schoolId:u.schoolId,submittedAt:now(),status:"Submitted",data:b.data||{}};
-      await blobStore().setJSON(`report-${id}`,report);const idx=await getSubIndex();idx.unshift({id,userId:u.id,district:u.district,schoolName:u.schoolName,schoolId:u.schoolId,submittedAt:report.submittedAt,status:report.status});await setSubIndex(idx.slice(0,5000));return json({ok:true,id});
+      await blobStore().setJSON(`report-${id}`,report);const idx=await getSubIndex();const data=report.data||{};idx.unshift({id,userId:u.id,district:u.district,schoolName:u.schoolName,schoolId:u.schoolId,submittedAt:report.submittedAt,status:report.status,score:data.score||null,monitoringDate:data.monitoringDate||"",hazards:(data.emergencies||[]).map(x=>x.hazardType).filter(Boolean),continuityLevels:(data.continuityActivations||[]).map(x=>x.level).filter(Boolean)});await setSubIndex(idx.slice(0,5000));return json({ok:true,id});
     }
-    if(path==="/submissions"&&req.method==="GET"){await auth(req,true);return json({submissions:await getSubIndex()})}
+    if(path==="/submissions"&&req.method==="GET"){await auth(req,true);return json({submissions:await enrichSubmissions(await getSubIndex())})}
     if(path==="/submission"&&req.method==="GET"){await auth(req,true);const r=await blobStore().get(`report-${url.searchParams.get("id")}`,{type:"json"});if(!r)return json({error:"Report not found."},404);return json({report:r})}
-    if(path==="/my-submissions"&&req.method==="GET"){const u=await auth(req);const idx=await getSubIndex();return json({submissions:idx.filter(x=>x.userId===u.id)})}
+    if(path==="/my-submissions"&&req.method==="GET"){const u=await auth(req);const idx=await getSubIndex();return json({submissions:await enrichSubmissions(idx.filter(x=>x.userId===u.id))})}
     if(path==="/dashboard"&&req.method==="GET"){
       await auth(req,true);const users=await getUsers();const idx=await getSubIndex();const ordinary=users.filter(u=>u.role==="user");
       const districts=[...new Set(ordinary.map(u=>u.district).filter(Boolean))];const counts={};idx.forEach(r=>counts[r.district]=(counts[r.district]||0)+1);
